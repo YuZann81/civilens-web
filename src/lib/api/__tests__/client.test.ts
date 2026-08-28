@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { apiClient, checkApiHealth, getApiBaseUrl, getApiRootUrl, initCsrf } from "../client";
+import { apiClient, checkApiHealth, getApiBaseUrl, getApiRootUrl, getGoogleOAuthUrl, initCsrf } from "../client";
 import { ApiError } from "../types";
 
 describe("API Client Foundation", () => {
@@ -22,6 +22,11 @@ describe("API Client Foundation", () => {
   it("resolves API root URL correctly", () => {
     const rootUrl = getApiRootUrl();
     expect(rootUrl).toBe("http://localhost:8000");
+  });
+
+  it("resolves Google OAuth redirect URL correctly", () => {
+    const oauthUrl = getGoogleOAuthUrl();
+    expect(oauthUrl).toBe("http://localhost:8000/api/cv/v1/auth/google/redirect");
   });
 
   it("handles successful JSON response with credentials included", async () => {

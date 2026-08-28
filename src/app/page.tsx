@@ -1,4 +1,8 @@
+import { getGoogleOAuthUrl } from "@/lib/api/client";
+
 export default function HomePage() {
+  const googleAuthUrl = getGoogleOAuthUrl();
+
   return (
     <div className="flex min-h-screen flex-col bg-[#faf8f5] text-[#2c2926]">
       {/* Header / Brand */}
@@ -22,9 +26,17 @@ export default function HomePage() {
               CiviLens
             </span>
           </div>
-          <span className="rounded-full bg-[#e5f0e6] px-3 py-1 text-xs font-semibold text-[#22512a]">
-            Phase 0 Foundation
-          </span>
+          <div className="flex items-center gap-4">
+            <a
+              href={googleAuthUrl}
+              className="inline-flex items-center gap-2 rounded-lg bg-[#2d6a36] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#22512a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a36]"
+            >
+              Continue with Google
+            </a>
+            <span className="rounded-full bg-[#e5f0e6] px-3 py-1 text-xs font-semibold text-[#22512a]">
+              Phase 0 Foundation
+            </span>
+          </div>
         </div>
       </header>
 
@@ -43,6 +55,15 @@ export default function HomePage() {
             CiviLens connects citizens, thoughtful candidate solution analysis, community
             decision-making, and government action into a single verified lifecycle.
           </p>
+
+          <div className="pt-2">
+            <a
+              href={googleAuthUrl}
+              className="inline-flex items-center gap-2 rounded-lg border border-[#cbe0ce] bg-white px-5 py-2.5 text-sm font-semibold text-[#1c4123] shadow-xs transition hover:bg-[#f4f8f4] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a36]"
+            >
+              <span>Continue with Google</span>
+            </a>
+          </div>
 
           <div className="grid gap-4 pt-6 sm:grid-cols-3">
             <div className="rounded-xl border border-[#eae2d3] bg-[#ffffff] p-5 shadow-xs">

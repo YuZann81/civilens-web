@@ -13,6 +13,10 @@ export function getApiRootUrl(): string {
   return baseUrl.replace(/\/api\/cv\/v1\/?$/, "").replace(/\/cv\/v1\/?$/, "");
 }
 
+export function getGoogleOAuthUrl(): string {
+  return `${getApiBaseUrl()}/auth/google/redirect`;
+}
+
 export interface RequestOptions extends Omit<RequestInit, "headers"> {
   headers?: Record<string, string>;
   params?: Record<string, string | number | boolean | undefined | null>;

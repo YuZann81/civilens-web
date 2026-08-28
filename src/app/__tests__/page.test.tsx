@@ -14,5 +14,6 @@ describe("HomePage", () => {
         name: /making local environmental issues visible/i,
       })
     ).toBeDefined();
+    expect(screen.getAllByRole("link", { name: /continue with google/i })).toBeDefined();
   });
 });
