@@ -8,6 +8,11 @@ export function getApiBaseUrl(): string {
   return "http://localhost:8000/api/cv/v1";
 }
 
+export function getApiRootUrl(): string {
+  const baseUrl = getApiBaseUrl();
+  return baseUrl.replace(/\/api\/cv\/v1\/?$/, "").replace(/\/cv\/v1\/?$/, "");
+}
+
 export interface RequestOptions extends Omit<RequestInit, "headers"> {
   headers?: Record<string, string>;
   params?: Record<string, string | number | boolean | undefined | null>;
@@ -43,6 +48,7 @@ export async function apiClient<T>(
   let response: Response;
   try {
     response = await fetch(url.toString(), {
+      credentials: "include",
       ...options,
       headers,
     });
@@ -68,6 +74,23 @@ export async function apiClient<T>(
     data: data as T,
     status: response.status,
   };
+}
+
+export async function initCsrf(): Promise<void> {
+  const rootUrl = getApiRootUrl();
+  try {
+    await fetch(`${rootUrl}/sanctum/csrf-cookie`, {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        Accept: "application/json",
+      },
+    });
+  } catch (error) {
+    const networkMessage =
+      error instanceof Error ? error.message : "Failed to initialize CSRF cookie";
+    throw new ApiError(0, `CSRF initialization error: ${networkMessage}`);
+  }
 }
 
 export async function checkApiHealth(): Promise<HealthResponse> {

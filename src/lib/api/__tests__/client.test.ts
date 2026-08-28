@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { apiClient, checkApiHealth, getApiBaseUrl } from "../client";
+import { apiClient, checkApiHealth, getApiBaseUrl, getApiRootUrl, initCsrf } from "../client";
 import { ApiError } from "../types";
 
 describe("API Client Foundation", () => {
@@ -19,7 +19,12 @@ describe("API Client Foundation", () => {
     expect(url.length).toBeGreaterThan(0);
   });
 
-  it("handles successful JSON response", async () => {
+  it("resolves API root URL correctly", () => {
+    const rootUrl = getApiRootUrl();
+    expect(rootUrl).toBe("http://localhost:8000");
+  });
+
+  it("handles successful JSON response with credentials included", async () => {
     const mockData = { status: "ok" };
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -33,6 +38,29 @@ describe("API Client Foundation", () => {
     const response = await apiClient<{ status: string }>("/health");
     expect(response.status).toBe(200);
     expect(response.data).toEqual({ status: "ok" });
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/health"),
+      expect.objectContaining({ credentials: "include" })
+    );
+  });
+
+  it("initializes CSRF cookie against root sanctum route", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 204,
+      headers: {
+        get: () => null,
+      },
+    });
+
+    await initCsrf();
+    expect(global.fetch).toHaveBeenCalledWith(
+      "http://localhost:8000/sanctum/csrf-cookie",
+      expect.objectContaining({
+        method: "GET",
+        credentials: "include",
+      })
+    );
   });
 
   it("handles HTTP errors cleanly without exposing internals", async () => {
