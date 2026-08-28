@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { apiClient, checkApiHealth, getApiBaseUrl, getApiRootUrl, getGoogleOAuthUrl, initCsrf } from "../client";
+import { apiClient, checkApiHealth, getApiBaseUrl, getApiRootUrl, getAuthUser, getGoogleOAuthUrl, initCsrf, logout } from "../client";
 import { ApiError } from "../types";
 
 describe("API Client Foundation", () => {
@@ -63,6 +63,60 @@ describe("API Client Foundation", () => {
       "http://localhost:8000/sanctum/csrf-cookie",
       expect.objectContaining({
         method: "GET",
+        credentials: "include",
+      })
+    );
+  });
+
+  it("fetches authenticated user profile via getAuthUser", async () => {
+    const mockUser = {
+      id: 1,
+      name: "Jane Citizen",
+      email: "jane@example.com",
+      role: "citizen",
+      status: "active",
+    };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: {
+        get: (header: string) => (header === "content-type" ? "application/json" : null),
+      },
+      json: async () => ({
+        data: mockUser,
+        message: "Authenticated user.",
+      }),
+    });
+
+    const user = await getAuthUser();
+    expect(user).toEqual(mockUser);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "http://localhost:8000/api/cv/v1/auth/me",
+      expect.objectContaining({
+        credentials: "include",
+      })
+    );
+  });
+
+  it("executes logout request successfully", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: {
+        get: (header: string) => (header === "content-type" ? "application/json" : null),
+      },
+      json: async () => ({
+        data: null,
+        message: "Logged out successfully.",
+      }),
+    });
+
+    await logout();
+    expect(global.fetch).toHaveBeenCalledWith(
+      "http://localhost:8000/api/cv/v1/auth/logout",
+      expect.objectContaining({
+        method: "POST",
         credentials: "include",
       })
     );

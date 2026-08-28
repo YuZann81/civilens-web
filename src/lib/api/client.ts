@@ -1,4 +1,4 @@
-import { ApiError, ApiResponse, HealthResponse } from "./types";
+import { ApiError, ApiResponse, ApiSuccessEnvelope, AuthUser, HealthResponse } from "./types";
 
 export function getApiBaseUrl(): string {
   const envUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
@@ -95,6 +95,20 @@ export async function initCsrf(): Promise<void> {
       error instanceof Error ? error.message : "Failed to initialize CSRF cookie";
     throw new ApiError(0, `CSRF initialization error: ${networkMessage}`);
   }
+}
+
+export async function getAuthUser(): Promise<AuthUser> {
+  const result = await apiClient<ApiSuccessEnvelope<AuthUser>>("/auth/me", {
+    method: "GET",
+    cache: "no-store",
+  });
+  return result.data.data;
+}
+
+export async function logout(): Promise<void> {
+  await apiClient<ApiSuccessEnvelope<null>>("/auth/logout", {
+    method: "POST",
+  });
 }
 
 export async function checkApiHealth(): Promise<HealthResponse> {

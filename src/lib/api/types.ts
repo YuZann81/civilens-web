@@ -40,6 +40,14 @@ export interface ApiCollectionEnvelope<T> {
   message?: string;
 }
 
+export interface AuthUser {
+  id: number;
+  name: string;
+  email: string;
+  role: "user" | "citizen" | "government" | "admin" | string;
+  status: "active" | "suspended" | string;
+}
+
 export interface HealthResponse {
   status: string;
   checks?: {
