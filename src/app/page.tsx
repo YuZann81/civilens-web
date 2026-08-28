@@ -1,6 +1,10 @@
+"use client";
+
+import { useAuth } from "@/lib/auth/auth-context";
 import { getGoogleOAuthUrl } from "@/lib/api/client";
 
 export default function HomePage() {
+  const { user, status, logout } = useAuth();
   const googleAuthUrl = getGoogleOAuthUrl();
 
   return (
@@ -26,13 +30,36 @@ export default function HomePage() {
               CiviLens
             </span>
           </div>
+
           <div className="flex items-center gap-4">
-            <a
-              href={googleAuthUrl}
-              className="inline-flex items-center gap-2 rounded-lg bg-[#2d6a36] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#22512a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a36]"
-            >
-              Continue with Google
-            </a>
+            {status === "loading" && (
+              <span className="text-xs text-[#57524d]">Checking authentication...</span>
+            )}
+
+            {status === "authenticated" && user && (
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-medium text-[#1c4123]">
+                  Signed in as <strong className="font-semibold">{user.name}</strong> ({user.role})
+                </span>
+                <button
+                  type="button"
+                  onClick={() => void logout()}
+                  className="rounded-lg border border-[#cbe0ce] bg-white px-3 py-1.5 text-xs font-semibold text-[#1c4123] transition hover:bg-[#f4f8f4] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a36]"
+                >
+                  Logout
+                </button>
+              </div>
+            )}
+
+            {(status === "unauthenticated" || status === "error") && (
+              <a
+                href={googleAuthUrl}
+                className="inline-flex items-center gap-2 rounded-lg bg-[#2d6a36] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#22512a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a36]"
+              >
+                Continue with Google
+              </a>
+            )}
+
             <span className="rounded-full bg-[#e5f0e6] px-3 py-1 text-xs font-semibold text-[#22512a]">
               Phase 0 Foundation
             </span>
@@ -57,12 +84,18 @@ export default function HomePage() {
           </p>
 
           <div className="pt-2">
-            <a
-              href={googleAuthUrl}
-              className="inline-flex items-center gap-2 rounded-lg border border-[#cbe0ce] bg-white px-5 py-2.5 text-sm font-semibold text-[#1c4123] shadow-xs transition hover:bg-[#f4f8f4] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a36]"
-            >
-              <span>Continue with Google</span>
-            </a>
+            {status === "authenticated" && user ? (
+              <div className="rounded-xl border border-[#cbe0ce] bg-[#f4f8f4] p-4 text-sm text-[#22512a]">
+                <span>Welcome back, {user.name}. You are authenticated as {user.role}.</span>
+              </div>
+            ) : (
+              <a
+                href={googleAuthUrl}
+                className="inline-flex items-center gap-2 rounded-lg border border-[#cbe0ce] bg-white px-5 py-2.5 text-sm font-semibold text-[#1c4123] shadow-xs transition hover:bg-[#f4f8f4] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a36]"
+              >
+                <span>Continue with Google</span>
+              </a>
+            )}
           </div>
 
           <div className="grid gap-4 pt-6 sm:grid-cols-3">

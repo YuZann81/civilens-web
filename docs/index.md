@@ -4,3 +4,4 @@ This directory contains technical documentation and references for the `civilens
 
 * Engineering Constitution: `../../CIVILENS_ENGINEERING.md`
 * Operating Guidelines: `../AGENTS.md`
+* Web Authentication Architecture: `./auth.md`
