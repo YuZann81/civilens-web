@@ -21,6 +21,30 @@ export interface ApiResponse<T> {
   status: number;
 }
 
+export interface ApiSuccessEnvelope<T> {
+  data: T;
+  message?: string;
+}
+
+export interface ApiPaginationMeta {
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+  [key: string]: unknown;
+}
+
+export interface ApiCollectionEnvelope<T> {
+  data: T[];
+  meta: ApiPaginationMeta;
+  message?: string;
+}
+
 export interface HealthResponse {
   status: string;
+  checks?: {
+    database?: string;
+    redis?: string;
+    [key: string]: string | undefined;
+  };
 }
