@@ -85,9 +85,9 @@ export async function apiClient<T>(
 }
 
 export async function initCsrf(): Promise<void> {
-  const rootUrl = getApiRootUrl();
+  const baseUrl = getApiBaseUrl();
   try {
-    await fetch(`${rootUrl}/sanctum/csrf-cookie`, {
+    await fetch(`${baseUrl}/sanctum/csrf-cookie`, {
       method: "GET",
       credentials: "include",
       headers: {
