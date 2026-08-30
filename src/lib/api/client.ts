@@ -2,8 +2,12 @@ import { ApiError, ApiResponse, ApiSuccessEnvelope, AuthUser, HealthResponse } f
 
 export function getApiBaseUrl(): string {
   const envUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
-  if (envUrl && envUrl.length > 0) {
-    return envUrl.replace(/\/+$/, "");
+  if (envUrl && envUrl.length > 0 && envUrl !== "undefined") {
+    const cleaned = envUrl.replace(/\/+$/, "");
+    if (!cleaned.endsWith("/cv/v1") && !cleaned.endsWith("/api/cv/v1")) {
+      return `${cleaned}/cv/v1`;
+    }
+    return cleaned;
   }
   return "http://localhost:8000/api/cv/v1";
 }

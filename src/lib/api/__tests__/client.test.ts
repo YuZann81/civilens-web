@@ -29,6 +29,36 @@ describe("API Client Foundation", () => {
     expect(oauthUrl).toBe("http://localhost:8000/api/cv/v1/auth/google/redirect");
   });
 
+  it("normalizes production base URL without cv/v1 prefix", () => {
+    const originalEnv = process.env.NEXT_PUBLIC_API_URL;
+    process.env.NEXT_PUBLIC_API_URL = "https://api.razzan.site";
+
+    expect(getApiBaseUrl()).toBe("https://api.razzan.site/cv/v1");
+    expect(getGoogleOAuthUrl()).toBe("https://api.razzan.site/cv/v1/auth/google/redirect");
+    expect(getApiRootUrl()).toBe("https://api.razzan.site");
+
+    if (originalEnv !== undefined) {
+      process.env.NEXT_PUBLIC_API_URL = originalEnv;
+    } else {
+      delete process.env.NEXT_PUBLIC_API_URL;
+    }
+  });
+
+  it("preserves explicitly versioned production base URL", () => {
+    const originalEnv = process.env.NEXT_PUBLIC_API_URL;
+    process.env.NEXT_PUBLIC_API_URL = "https://api.razzan.site/cv/v1";
+
+    expect(getApiBaseUrl()).toBe("https://api.razzan.site/cv/v1");
+    expect(getGoogleOAuthUrl()).toBe("https://api.razzan.site/cv/v1/auth/google/redirect");
+    expect(getApiRootUrl()).toBe("https://api.razzan.site");
+
+    if (originalEnv !== undefined) {
+      process.env.NEXT_PUBLIC_API_URL = originalEnv;
+    } else {
+      delete process.env.NEXT_PUBLIC_API_URL;
+    }
+  });
+
   it("handles successful JSON response with credentials included", async () => {
     const mockData = { status: "ok" };
     global.fetch = vi.fn().mockResolvedValue({
