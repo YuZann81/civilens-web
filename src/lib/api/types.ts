@@ -68,9 +68,18 @@ export interface RegisterResponseData {
   message?: string;
 }
 
-export interface ResetPasswordData {
-  token: string;
+export interface VerifyResetCodeData {
   email: string;
+  code: string;
+}
+
+export interface VerifyResetCodeResponseData {
+  reset_authorization: string;
+}
+
+export interface ResetPasswordData {
+  email: string;
+  reset_authorization: string;
   password: string;
   password_confirmation: string;
 }

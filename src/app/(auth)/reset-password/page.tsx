@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import AuthWaveLayout from "@/components/ui/AuthWaveLayout";
+import { useAuth } from "@/lib/auth/auth-context";
 import { resetPassword } from "@/lib/api/client";
 
 function LeftPanel() {
@@ -77,10 +78,8 @@ function LeftPanel() {
 
 function ResetPasswordForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const { resetAuthSession, clearResetAuthSession } = useAuth();
 
-  const [email, setEmail] = useState(() => searchParams?.get("email") || "");
-  const [token] = useState(() => searchParams?.get("token") || "");
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -88,14 +87,52 @@ function ResetPasswordForm() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  // If in-memory authorization is absent (e.g. refreshed page), show expired state
+  if (!resetAuthSession || !resetAuthSession.token) {
+    return (
+      <div className="flex flex-col items-center w-full text-center">
+        <Image
+          src="/logos/civilens-logo-stacked-dark.svg"
+          alt="CiviLens"
+          width={64}
+          height={64}
+          className="mb-6"
+          priority
+        />
+
+        <h1
+          className="text-2xl font-bold leading-snug mb-2 font-serif text-[#fafaf5]"
+          style={{ fontFamily: "Georgia, serif" }}
+        >
+          Sesi Reset <span style={{ color: "var(--sage-light)" }}>Kedaluwarsa</span>
+        </h1>
+        <p className="text-sm mb-6 text-[#8fbf7f]">
+          Sesi otorisasi reset kata sandi tidak ditemukan atau telah kedaluwarsa demi keamanan akun Anda.
+        </p>
+
+        <Link
+          href="/forgot-password"
+          className="w-full py-3 rounded-xl font-semibold text-sm transition-all active:scale-95 text-[var(--green-deep)] bg-[var(--cream)] hover:bg-[#e8ede3] text-center"
+        >
+          Minta Kode Verifikasi Baru
+        </Link>
+
+        <p className="mt-8 text-sm text-[#8fbf7f]">
+          Atau kembali ke{" "}
+          <Link
+            href="/login"
+            className="transition-opacity hover:opacity-70 text-[var(--sage-light)] font-medium"
+          >
+            Masuk
+          </Link>
+        </p>
+      </div>
+    );
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isLoading) return;
-
-    if (!token) {
-      setError("Token reset kata sandi tidak ditemukan atau tidak valid. Silakan minta tautan baru dari halaman Lupa Kata Sandi.");
-      return;
-    }
 
     if (password !== passwordConfirmation) {
       setError("Kata sandi baru dan konfirmasi kata sandi tidak cocok.");
@@ -112,17 +149,19 @@ function ResetPasswordForm() {
 
     try {
       await resetPassword({
-        token,
-        email,
+        email: resetAuthSession.email,
+        reset_authorization: resetAuthSession.token,
         password,
         password_confirmation: passwordConfirmation,
       });
 
+      // Clear in-memory token immediately after success
+      clearResetAuthSession();
       router.push("/login?reset=success");
     } catch (err: unknown) {
       if (err instanceof Error) {
         if ("status" in err && err.status === 422) {
-          setError("Tautan reset kata sandi sudah kedaluwarsa atau data tidak valid. Silakan minta tautan reset baru.");
+          setError("Otorisasi reset kata sandi sudah kedaluwarsa atau data tidak valid. Silakan minta kode verifikasi baru.");
         } else {
           setError(err.message || "Gagal mengatur ulang kata sandi. Silakan coba lagi.");
         }
@@ -166,43 +205,18 @@ function ResetPasswordForm() {
         Atur Ulang <span style={{ color: "var(--sage-light)" }}>Kata Sandi</span>
       </h1>
       <p className="text-sm mb-6 text-center text-[#8fbf7f]">
-        Masukkan kata sandi baru untuk akun Anda
+        Untuk akun <strong className="text-[#fafaf5] font-medium">{resetAuthSession.email}</strong>
       </p>
 
       {error && (
         <div
-          className="w-full px-4 py-3 rounded-xl text-sm mb-4"
-          style={{
-            background: "rgba(239,68,68,0.15)",
-            color: "#f87171",
-            border: "1px solid rgba(239,68,68,0.3)",
-          }}
+          className="w-full px-4 py-3 rounded-xl text-sm mb-4 bg-[rgba(239,68,68,0.15)] text-[#f87171] border border-[rgba(239,68,68,0.3)]"
         >
           {error}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
-        {/* Email */}
-        <div className="flex flex-col gap-1">
-          <label htmlFor="email" className="text-xs tracking-wide text-[#8fbf7f]">
-            Alamat Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="nama@email.com"
-            required
-            className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-colors"
-            style={inputStyle}
-            onFocus={onFocus}
-            onBlur={onBlur}
-          />
-        </div>
-
         {/* New Password */}
         <div className="flex flex-col gap-1">
           <label htmlFor="password" className="text-xs tracking-wide text-[#8fbf7f]">
@@ -355,14 +369,5 @@ function ResetPasswordForm() {
 }
 
 export default function ResetPasswordPage() {
-  return (
-    <AuthWaveLayout
-      left={<LeftPanel />}
-      right={
-        <Suspense fallback={<div className="text-xs text-[#8fbf7f]">Memuat formulir...</div>}>
-          <ResetPasswordForm />
-        </Suspense>
-      }
-    />
-  );
+  return <AuthWaveLayout left={<LeftPanel />} right={<ResetPasswordForm />} />;
 }

@@ -8,6 +8,8 @@ import {
   RegisterData,
   RegisterResponseData,
   ResetPasswordData,
+  VerifyResetCodeData,
+  VerifyResetCodeResponseData,
 } from "./types";
 
 export function getApiBaseUrl(): string {
@@ -154,6 +156,20 @@ export async function forgotPassword(email: string): Promise<void> {
     method: "POST",
     body: JSON.stringify({ email }),
   });
+}
+
+export async function verifyResetCode(
+  data: VerifyResetCodeData
+): Promise<VerifyResetCodeResponseData> {
+  await initCsrf();
+  const response = await apiClient<ApiSuccessEnvelope<VerifyResetCodeResponseData>>(
+    "/auth/verify-reset-code",
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    }
+  );
+  return response.data.data;
 }
 
 export async function resetPassword(data: ResetPasswordData): Promise<void> {

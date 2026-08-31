@@ -13,6 +13,7 @@ import {
   register,
   resendVerificationEmail,
   resetPassword,
+  verifyResetCode,
 } from "../client";
 import { ApiError } from "../types";
 
@@ -200,6 +201,32 @@ describe("API Client Foundation", () => {
     await expect(forgotPassword("budi@example.com")).resolves.toBeUndefined();
   });
 
+  it("executes verify reset code request and returns authorization token", async () => {
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 204,
+        headers: { get: () => null },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: { get: () => "application/json" },
+        json: async () => ({
+          data: { reset_authorization: "auth-token-64-chars" },
+          message: "Code verified.",
+        }),
+      });
+
+    const result = await verifyResetCode({
+      email: "budi@example.com",
+      code: "123456",
+    });
+
+    expect(result.reset_authorization).toBe("auth-token-64-chars");
+  });
+
   it("executes resend verification email request", async () => {
     global.fetch = vi
       .fn()
@@ -235,7 +262,7 @@ describe("API Client Foundation", () => {
 
     await expect(
       resetPassword({
-        token: "test-token-123",
+        reset_authorization: "test-auth-token-123",
         email: "user@example.com",
         password: "newPassword123",
         password_confirmation: "newPassword123",

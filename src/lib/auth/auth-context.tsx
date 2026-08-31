@@ -13,10 +13,18 @@ import {
 
 export type AuthStatus = "loading" | "authenticated" | "unauthenticated" | "error";
 
+export interface ResetAuthSession {
+  email: string;
+  token: string;
+}
+
 export interface AuthContextValue {
   user: AuthUser | null;
   status: AuthStatus;
   error: string | null;
+  resetAuthSession: ResetAuthSession | null;
+  setResetAuthSession: (session: ResetAuthSession | null) => void;
+  clearResetAuthSession: () => void;
   refreshUser: () => Promise<void>;
   login: (credentials: LoginCredentials) => Promise<AuthUser>;
   register: (data: RegisterData) => Promise<RegisterResponseData>;
@@ -30,7 +38,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [status, setStatus] = useState<AuthStatus>("loading");
   const [error, setError] = useState<string | null>(null);
+  const [resetAuthSession, setResetAuthSession] = useState<ResetAuthSession | null>(null);
   const initializingRef = useRef(false);
+
+  const clearResetAuthSession = useCallback(() => {
+    setResetAuthSession(null);
+  }, []);
 
   const refreshUser = useCallback(async () => {
     try {
@@ -123,6 +136,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         status,
         error,
+        resetAuthSession,
+        setResetAuthSession,
+        clearResetAuthSession,
         refreshUser,
         login,
         register,

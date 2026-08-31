@@ -6,12 +6,33 @@ import { ApiError } from "@/lib/api/types";
 import * as apiClient from "@/lib/api/client";
 
 function TestConsumer() {
-  const { user, status, error, login, register, logout, loginWithGoogle } = useAuth();
+  const {
+    user,
+    status,
+    error,
+    resetAuthSession,
+    setResetAuthSession,
+    clearResetAuthSession,
+    login,
+    register,
+    logout,
+    loginWithGoogle,
+  } = useAuth();
+
   return (
     <div>
       <div data-testid="status">{status}</div>
       <div data-testid="user">{user ? user.name : "none"}</div>
       <div data-testid="error">{error ?? "no-error"}</div>
+      <div data-testid="reset-auth">{resetAuthSession ? resetAuthSession.email : "none"}</div>
+      <button
+        onClick={() =>
+          setResetAuthSession({ email: "user@example.com", token: "secret-token-64" })
+        }
+      >
+        Set Reset Auth
+      </button>
+      <button onClick={clearResetAuthSession}>Clear Reset Auth</button>
       <button onClick={() => void login({ email: "test@example.com", password: "password123" })}>
         Login
       </button>
@@ -81,6 +102,34 @@ describe("AuthProvider & useAuth", () => {
 
     expect(screen.getByTestId("user").textContent).toBe("none");
     expect(screen.getByTestId("error").textContent).toBe("no-error");
+  });
+
+  it("manages temporary in-memory resetAuthSession state", async () => {
+    vi.spyOn(apiClient, "getAuthUser").mockRejectedValue(new ApiError(401, "Unauthenticated."));
+
+    render(
+      <AuthProvider>
+        <TestConsumer />
+      </AuthProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("status").textContent).toBe("unauthenticated");
+    });
+
+    expect(screen.getByTestId("reset-auth").textContent).toBe("none");
+
+    act(() => {
+      screen.getByText("Set Reset Auth").click();
+    });
+
+    expect(screen.getByTestId("reset-auth").textContent).toBe("user@example.com");
+
+    act(() => {
+      screen.getByText("Clear Reset Auth").click();
+    });
+
+    expect(screen.getByTestId("reset-auth").textContent).toBe("none");
   });
 
   it("handles login action successfully and updates user state", async () => {

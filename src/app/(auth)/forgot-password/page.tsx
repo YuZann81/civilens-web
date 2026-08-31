@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import AuthWaveLayout from "@/components/ui/AuthWaveLayout";
 import { forgotPassword } from "@/lib/api/client";
 
@@ -57,7 +58,7 @@ function LeftPanel() {
           Pemulihan Akun Aman
         </p>
         <p className="mt-2 text-sm leading-relaxed text-[var(--text-secondary)]">
-          Kami akan mengirimkan instruksi pemulihan
+          Kami akan mengirimkan 6 digit kode verifikasi
           <br />
           ke alamat email yang terdaftar.
         </p>
@@ -67,8 +68,8 @@ function LeftPanel() {
 }
 
 function RightPanel() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -77,17 +78,20 @@ function RightPanel() {
     if (isLoading) return;
 
     setError("");
-    setMessage("");
     setIsLoading(true);
 
     try {
       await forgotPassword(email);
-      setMessage("Tautan reset kata sandi telah dikirim ke email Anda jika terdaftar.");
+      router.push(`/verify-reset-code?email=${encodeURIComponent(email)}`);
     } catch (err: unknown) {
-      if (err instanceof Error && "status" in err && err.status === 404) {
-        setError("Layanan reset kata sandi sedang dalam persiapan backend. Silakan gunakan Masuk dengan Google.");
+      if (err instanceof Error) {
+        if ("status" in err && err.status === 404) {
+          setError("Layanan reset kata sandi sedang dalam persiapan backend. Silakan gunakan Masuk dengan Google.");
+        } else {
+          setError(err.message || "Gagal memproses permintaan reset kata sandi. Silakan coba lagi nanti.");
+        }
       } else {
-        setError("Gagal memproses permintaan reset kata sandi. Silakan coba lagi nanti.");
+        setError("Terjadi kesalahan jaringan. Periksa koneksi internet Anda.");
       }
     } finally {
       setIsLoading(false);
@@ -126,14 +130,8 @@ function RightPanel() {
         Lupa <span style={{ color: "var(--sage-light)" }}>Kata Sandi?</span>
       </h1>
       <p className="text-sm mb-6 text-center text-[#8fbf7f]">
-        Masukkan email Anda untuk menerima instruksi reset kata sandi.
+        Masukkan email Anda untuk menerima 6 digit kode verifikasi.
       </p>
-
-      {message && (
-        <div className="w-full px-4 py-3 rounded-xl text-sm mb-4 bg-[rgba(208,240,192,0.15)] text-[#d0f0c0] border border-[rgba(208,240,192,0.3)]">
-          {message}
-        </div>
-      )}
 
       {error && (
         <div className="w-full px-4 py-3 rounded-xl text-sm mb-4 bg-[rgba(239,68,68,0.15)] text-[#f87171] border border-[rgba(239,68,68,0.3)]">
@@ -166,7 +164,7 @@ function RightPanel() {
           disabled={isLoading}
           className="w-full py-3 rounded-xl font-semibold text-sm transition-all active:scale-95 text-[var(--green-deep)] bg-[var(--cream)] hover:bg-[#e8ede3] disabled:opacity-50"
         >
-          {isLoading ? "Mengirim..." : "Kirim Tautan Reset"}
+          {isLoading ? "Mengirim Kode..." : "Kirim Kode Verifikasi"}
         </button>
       </form>
 

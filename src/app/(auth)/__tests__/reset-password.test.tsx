@@ -2,41 +2,89 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import ResetPasswordPage from "../reset-password/page";
+import { AuthProvider, useAuth } from "@/lib/auth/auth-context";
 import * as apiClient from "@/lib/api/client";
 import { ApiError } from "@/lib/api/types";
 
 const mockPush = vi.fn();
-let mockSearchParams = new URLSearchParams("token=valid-token-123&email=user%40example.com");
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push: mockPush,
     replace: vi.fn(),
   }),
-  useSearchParams: () => mockSearchParams,
 }));
+
+function SeedResetSession({
+  email = "user@example.com",
+  token = "auth-auth-64-bytes",
+  children,
+}: {
+  email?: string;
+  token?: string;
+  children: React.ReactNode;
+}) {
+  const { setResetAuthSession } = useAuth();
+  React.useEffect(() => {
+    setResetAuthSession({ email, token });
+  }, [email, token, setResetAuthSession]);
+
+  return <>{children}</>;
+}
 
 describe("ResetPasswordPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockSearchParams = new URLSearchParams("token=valid-token-123&email=user%40example.com");
   });
 
-  it("renders reset password form with prefilled email from searchParams", () => {
-    render(<ResetPasswordPage />);
+  it("renders expired session view when accessed directly or refreshed without in-memory state", () => {
+    render(
+      <AuthProvider>
+        <ResetPasswordPage />
+      </AuthProvider>
+    );
 
-    expect(screen.getByText("Atur Ulang Kata Sandi")).toBeDefined();
-    expect(screen.getByLabelText("Alamat Email")).toBeDefined();
-    expect(screen.getByLabelText("Kata Sandi Baru")).toBeDefined();
-    expect(screen.getByLabelText("Konfirmasi Kata Sandi Baru")).toBeDefined();
-    expect(screen.getByRole("button", { name: "Perbarui Kata Sandi" })).toBeDefined();
-
-    const emailInput = screen.getByLabelText("Alamat Email") as HTMLInputElement;
-    expect(emailInput.value).toBe("user@example.com");
+    expect(screen.getByText("Sesi Reset")).toBeDefined();
+    expect(screen.getByText("Kedaluwarsa")).toBeDefined();
+    expect(
+      screen.getByText(/sesi otorisasi reset kata sandi tidak ditemukan/i)
+    ).toBeDefined();
+    expect(
+      screen.getByRole("link", { name: "Minta Kode Verifikasi Baru" })
+    ).toBeDefined();
   });
 
-  it("toggles password visibility on new password and confirm password inputs", () => {
-    render(<ResetPasswordPage />);
+  it("renders reset password form when valid in-memory session is present", async () => {
+    render(
+      <AuthProvider>
+        <SeedResetSession>
+          <ResetPasswordPage />
+        </SeedResetSession>
+      </AuthProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Atur Ulang")).toBeDefined();
+      expect(screen.getByText("Kata Sandi")).toBeDefined();
+      expect(screen.getByText("user@example.com")).toBeDefined();
+      expect(screen.getByLabelText("Kata Sandi Baru")).toBeDefined();
+      expect(screen.getByLabelText("Konfirmasi Kata Sandi Baru")).toBeDefined();
+      expect(screen.getByRole("button", { name: "Perbarui Kata Sandi" })).toBeDefined();
+    });
+  });
+
+  it("toggles password visibility on new password and confirm password inputs", async () => {
+    render(
+      <AuthProvider>
+        <SeedResetSession>
+          <ResetPasswordPage />
+        </SeedResetSession>
+      </AuthProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Kata Sandi Baru")).toBeDefined();
+    });
 
     const passwordInput = screen.getByLabelText("Kata Sandi Baru") as HTMLInputElement;
     const confirmInput = screen.getByLabelText("Konfirmasi Kata Sandi Baru") as HTMLInputElement;
@@ -57,7 +105,17 @@ describe("ResetPasswordPage", () => {
   });
 
   it("validates password matching on submit", async () => {
-    render(<ResetPasswordPage />);
+    render(
+      <AuthProvider>
+        <SeedResetSession>
+          <ResetPasswordPage />
+        </SeedResetSession>
+      </AuthProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Kata Sandi Baru")).toBeDefined();
+    });
 
     const passwordInput = screen.getByLabelText("Kata Sandi Baru");
     const confirmInput = screen.getByLabelText("Konfirmasi Kata Sandi Baru");
@@ -75,7 +133,17 @@ describe("ResetPasswordPage", () => {
   it("submits reset password payload and redirects to login with reset=success", async () => {
     const resetSpy = vi.spyOn(apiClient, "resetPassword").mockResolvedValue();
 
-    render(<ResetPasswordPage />);
+    render(
+      <AuthProvider>
+        <SeedResetSession>
+          <ResetPasswordPage />
+        </SeedResetSession>
+      </AuthProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Kata Sandi Baru")).toBeDefined();
+    });
 
     const passwordInput = screen.getByLabelText("Kata Sandi Baru");
     const confirmInput = screen.getByLabelText("Konfirmasi Kata Sandi Baru");
@@ -87,7 +155,7 @@ describe("ResetPasswordPage", () => {
 
     await waitFor(() => {
       expect(resetSpy).toHaveBeenCalledWith({
-        token: "valid-token-123",
+        reset_authorization: "auth-auth-64-bytes",
         email: "user@example.com",
         password: "newPassword123",
         password_confirmation: "newPassword123",
@@ -96,12 +164,22 @@ describe("ResetPasswordPage", () => {
     });
   });
 
-  it("handles expired or invalid reset token error (422)", async () => {
+  it("handles expired or invalid authorization token error (422)", async () => {
     vi.spyOn(apiClient, "resetPassword").mockRejectedValue(
-      new ApiError(422, "The password reset token is invalid.")
+      new ApiError(422, "Otorisasi reset kata sandi sudah kedaluwarsa atau data tidak valid.")
     );
 
-    render(<ResetPasswordPage />);
+    render(
+      <AuthProvider>
+        <SeedResetSession>
+          <ResetPasswordPage />
+        </SeedResetSession>
+      </AuthProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Kata Sandi Baru")).toBeDefined();
+    });
 
     const passwordInput = screen.getByLabelText("Kata Sandi Baru");
     const confirmInput = screen.getByLabelText("Konfirmasi Kata Sandi Baru");
@@ -113,7 +191,7 @@ describe("ResetPasswordPage", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText(/tautan reset kata sandi sudah kedaluwarsa atau data tidak valid/i)
+        screen.getByText(/otorisasi reset kata sandi sudah kedaluwarsa/i)
       ).toBeDefined();
     });
   });
