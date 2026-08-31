@@ -68,6 +68,13 @@ export interface RegisterResponseData {
   message?: string;
 }
 
+export interface ResetPasswordData {
+  token: string;
+  email: string;
+  password: string;
+  password_confirmation: string;
+}
+
 export interface HealthResponse {
   status: string;
   checks?: {

@@ -12,6 +12,7 @@ import {
   logout,
   register,
   resendVerificationEmail,
+  resetPassword,
 } from "../client";
 import { ApiError } from "../types";
 
@@ -215,6 +216,31 @@ describe("API Client Foundation", () => {
       });
 
     await expect(resendVerificationEmail()).resolves.toBeUndefined();
+  });
+
+  it("executes reset password request", async () => {
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 204,
+        headers: { get: () => null },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: { get: () => "application/json" },
+        json: async () => ({ data: null, message: "Password reset successful." }),
+      });
+
+    await expect(
+      resetPassword({
+        token: "test-token-123",
+        email: "user@example.com",
+        password: "newPassword123",
+        password_confirmation: "newPassword123",
+      })
+    ).resolves.toBeUndefined();
   });
 
   it("fetches authenticated user profile via getAuthUser", async () => {

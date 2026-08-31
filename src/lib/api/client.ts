@@ -7,6 +7,7 @@ import {
   LoginCredentials,
   RegisterData,
   RegisterResponseData,
+  ResetPasswordData,
 } from "./types";
 
 export function getApiBaseUrl(): string {
@@ -152,6 +153,14 @@ export async function forgotPassword(email: string): Promise<void> {
   await apiClient<ApiSuccessEnvelope<null>>("/auth/forgot-password", {
     method: "POST",
     body: JSON.stringify({ email }),
+  });
+}
+
+export async function resetPassword(data: ResetPasswordData): Promise<void> {
+  await initCsrf();
+  await apiClient<ApiSuccessEnvelope<null>>("/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify(data),
   });
 }
 

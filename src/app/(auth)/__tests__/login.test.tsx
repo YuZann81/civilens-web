@@ -7,17 +7,22 @@ import * as apiClient from "@/lib/api/client";
 import { ApiError } from "@/lib/api/types";
 
 const mockPush = vi.fn();
+let mockSearchParams = new URLSearchParams("");
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push: mockPush,
     replace: vi.fn(),
   }),
+  useSearchParams: () => mockSearchParams,
 }));
 
 describe("LoginPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockSearchParams = new URLSearchParams("");
   });
+
   it("renders split panel layout with illustrations, form inputs, and Google auth button", () => {
     vi.spyOn(apiClient, "getAuthUser").mockRejectedValue(new ApiError(401, "Unauthenticated."));
 
@@ -114,6 +119,23 @@ describe("LoginPage", () => {
 
     await waitFor(() => {
       expect(screen.getByText(/akun anda sedang ditangguhkan/i)).toBeDefined();
+    });
+  });
+
+  it("displays success banner when redirected from reset-password with ?reset=success", async () => {
+    mockSearchParams = new URLSearchParams("reset=success");
+    vi.spyOn(apiClient, "getAuthUser").mockRejectedValue(new ApiError(401, "Unauthenticated."));
+
+    render(
+      <AuthProvider>
+        <LoginPage />
+      </AuthProvider>
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/kata sandi anda berhasil diperbarui/i)
+      ).toBeDefined();
     });
   });
 });
