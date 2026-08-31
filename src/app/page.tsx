@@ -204,21 +204,39 @@ export default function HomePage() {
 
           <div className="pt-2">
             {status === "authenticated" && user ? (
-              <div className="rounded-xl border border-[#cbe0ce] bg-[#f4f8f4] p-4 text-sm text-[#22512a]">
-                <span>Welcome back, {user.name}. You are authenticated as {user.role}.</span>
-              </div>
-            ) : (
               <div className="flex flex-wrap items-center gap-3">
                 <Link
-                  href="/register"
+                  href="/reports/create"
                   className="inline-flex items-center gap-2 rounded-lg bg-[#2d6a36] px-5 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-[#22512a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a36]"
                 >
                   <span>Mulai Laporkan Isu</span>
                   <span>&rarr;</span>
                 </Link>
+                <Link
+                  href="/reports"
+                  className="inline-flex items-center gap-2 rounded-lg border border-[#cbe0ce] bg-white px-5 py-2.5 text-sm font-semibold text-[#1c4123] shadow-xs transition hover:bg-[#f4f8f4] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a36]"
+                >
+                  <span>Lihat Feed Laporan</span>
+                </Link>
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center gap-3">
+                <Link
+                  href="/reports/create"
+                  className="inline-flex items-center gap-2 rounded-lg bg-[#2d6a36] px-5 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-[#22512a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a36]"
+                >
+                  <span>Mulai Laporkan Isu</span>
+                  <span>&rarr;</span>
+                </Link>
+                <Link
+                  href="/reports"
+                  className="inline-flex items-center gap-2 rounded-lg border border-[#cbe0ce] bg-white px-5 py-2.5 text-sm font-semibold text-[#1c4123] shadow-xs transition hover:bg-[#f4f8f4] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a36]"
+                >
+                  <span>Lihat Feed Laporan</span>
+                </Link>
                 <a
                   href={googleAuthUrl}
-                  className="inline-flex items-center gap-2 rounded-lg border border-[#cbe0ce] bg-white px-5 py-2.5 text-sm font-semibold text-[#1c4123] shadow-xs transition hover:bg-[#f4f8f4] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a36]"
+                  className="inline-flex items-center gap-2 rounded-lg border border-[#eae2d3] bg-white px-5 py-2.5 text-sm font-medium text-[#57524d] shadow-xs transition hover:bg-[#f4f8f4] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a36]"
                 >
                   <span>Masuk dengan Google</span>
                 </a>

@@ -1,12 +1,18 @@
 import {
+  ApiCollectionEnvelope,
   ApiError,
   ApiResponse,
   ApiSuccessEnvelope,
   AuthUser,
+  Category,
+  CreateReportPayload,
   HealthResponse,
   LoginCredentials,
   RegisterData,
   RegisterResponseData,
+  Report,
+  ReportFilterParams,
+  ReportMedia,
   ResetPasswordData,
   VerifyResetCodeData,
   VerifyResetCodeResponseData,
@@ -64,7 +70,9 @@ export async function apiClient<T>(
   const xsrf = getXsrfToken();
   const defaultHeaders: Record<string, string> = {
     Accept: "application/json",
-    ...(options.body ? { "Content-Type": "application/json" } : {}),
+    ...(options.body && !(options.body instanceof FormData)
+      ? { "Content-Type": "application/json" }
+      : {}),
     ...(xsrf && options.method && ["POST", "PUT", "PATCH", "DELETE"].includes(options.method.toUpperCase())
       ? { "X-XSRF-TOKEN": xsrf }
       : {}),
@@ -122,6 +130,10 @@ export async function initCsrf(): Promise<void> {
     throw new ApiError(0, `CSRF initialization error: ${networkMessage}`);
   }
 }
+
+/* =========================================================================
+   Authentication API
+   ========================================================================= */
 
 export async function login(credentials: LoginCredentials): Promise<AuthUser> {
   await initCsrf();
@@ -208,4 +220,72 @@ export async function checkApiHealth(): Promise<HealthResponse> {
     cache: "no-store",
   });
   return result.data;
+}
+
+/* =========================================================================
+   Report Domain & Categories API
+   ========================================================================= */
+
+export async function getCategories(): Promise<Category[]> {
+  const response = await apiClient<ApiSuccessEnvelope<Category[]>>("/categories", {
+    method: "GET",
+    cache: "no-store",
+  });
+  return response.data.data;
+}
+
+export async function createReport(payload: CreateReportPayload): Promise<Report> {
+  await initCsrf();
+  const response = await apiClient<ApiSuccessEnvelope<Report>>("/reports", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  return response.data.data;
+}
+
+export async function uploadReportMedia(reportId: number, file: File): Promise<ReportMedia> {
+  await initCsrf();
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const response = await apiClient<ApiSuccessEnvelope<ReportMedia>>(`/reports/${reportId}/media`, {
+    method: "POST",
+    body: formData,
+  });
+  return response.data.data;
+}
+
+export async function deleteReportMedia(reportId: number, mediaId: number): Promise<void> {
+  await initCsrf();
+  await apiClient<ApiSuccessEnvelope<null>>(`/reports/${reportId}/media/${mediaId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function getReports(
+  params: ReportFilterParams = {}
+): Promise<ApiCollectionEnvelope<Report>> {
+  const queryParams: Record<string, string | number | boolean> = {};
+  if (params.mine) queryParams.mine = 1;
+  if (params.category_id) queryParams.category_id = params.category_id;
+  if (params.status) queryParams.status = params.status;
+  if (params.sort) queryParams.sort = params.sort;
+  if (params.order) queryParams.order = params.order;
+  if (params.page) queryParams.page = params.page;
+  if (params.per_page) queryParams.per_page = params.per_page;
+
+  const response = await apiClient<ApiCollectionEnvelope<Report>>("/reports", {
+    method: "GET",
+    params: queryParams,
+    cache: "no-store",
+  });
+  return response.data;
+}
+
+export async function getReport(id: number | string): Promise<Report> {
+  const response = await apiClient<ApiSuccessEnvelope<Report>>(`/reports/${id}`, {
+    method: "GET",
+    cache: "no-store",
+  });
+  return response.data.data;
 }

@@ -84,6 +84,71 @@ export interface ResetPasswordData {
   password_confirmation: string;
 }
 
+export interface Category {
+  id: number;
+  name: string;
+  slug: string;
+  description?: string | null;
+}
+
+export interface ReportLocation {
+  address: string;
+  latitude: number | null;
+  longitude: number | null;
+}
+
+export interface ReportMedia {
+  id: number;
+  original_name: string;
+  mime_type: string;
+  size: number;
+  created_at: string;
+}
+
+export interface ReportAiAnalysis {
+  id: number;
+  status: "pending" | "processing" | "completed" | "failed" | string;
+  summary?: string | null;
+  severity?: "low" | "medium" | "high" | "critical" | string | null;
+  analysis?: string | null;
+  confidence?: number | null;
+  completed_at?: string | null;
+}
+
+export interface Report {
+  id: number;
+  title: string;
+  description: string;
+  category?: Category | null;
+  location?: ReportLocation | null;
+  media?: ReportMedia[];
+  ai_analysis?: ReportAiAnalysis | null;
+  status: "pending" | "under_review" | "resolved" | "rejected" | string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateReportPayload {
+  title: string;
+  description: string;
+  category_id: number;
+  location: {
+    address: string;
+    latitude?: number | null;
+    longitude?: number | null;
+  };
+}
+
+export interface ReportFilterParams {
+  mine?: boolean;
+  category_id?: number;
+  status?: string;
+  sort?: string;
+  order?: "asc" | "desc";
+  page?: number;
+  per_page?: number;
+}
+
 export interface HealthResponse {
   status: string;
   checks?: {
