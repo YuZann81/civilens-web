@@ -14,6 +14,7 @@ import {
   ReportFilterParams,
   ReportMedia,
   ResetPasswordData,
+  Topic,
   VerifyResetCodeData,
   VerifyResetCodeResponseData,
 } from "./types";
@@ -223,8 +224,21 @@ export async function checkApiHealth(): Promise<HealthResponse> {
 }
 
 /* =========================================================================
-   Report Domain & Categories API
+   Report Domain & Topics / Categories API
    ========================================================================= */
+
+export async function getTopics(params?: { q?: string; limit?: number }): Promise<Topic[]> {
+  const query = new URLSearchParams();
+  if (params?.q) query.append("q", params.q);
+  if (params?.limit) query.append("limit", params.limit.toString());
+
+  const qs = query.toString() ? `?${query.toString()}` : "";
+  const response = await apiClient<ApiSuccessEnvelope<Topic[]>>(`/topics${qs}`, {
+    method: "GET",
+    cache: "no-store",
+  });
+  return response.data.data;
+}
 
 export async function getCategories(): Promise<Category[]> {
   const response = await apiClient<ApiSuccessEnvelope<Category[]>>("/categories", {
@@ -268,6 +282,7 @@ export async function getReports(
   const queryParams: Record<string, string | number | boolean> = {};
   if (params.mine) queryParams.mine = 1;
   if (params.category_id) queryParams.category_id = params.category_id;
+  if (params.topic) queryParams.topic = params.topic;
   if (params.status) queryParams.status = params.status;
   if (params.sort) queryParams.sort = params.sort;
   if (params.order) queryParams.order = params.order;

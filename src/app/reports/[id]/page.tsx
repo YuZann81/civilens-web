@@ -5,6 +5,10 @@ import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { getReport } from "@/lib/api/client";
 import { Report } from "@/lib/api/types";
+import {
+  IconPin,
+  IconSparkles,
+} from "@/components/ui/icons";
 
 function getStatusBadge(status: string) {
   switch (status) {
@@ -88,9 +92,9 @@ export default function ReportDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#faf8f5]">
+      <div className="flex min-h-screen items-center justify-center bg-[#fafaf5]">
         <div className="text-center space-y-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#2d6a36] border-t-transparent mx-auto" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#1e4d2b] border-t-transparent mx-auto" />
           <p className="text-sm font-medium text-[#57524d]">Memuat detail laporan...</p>
         </div>
       </div>
@@ -99,7 +103,7 @@ export default function ReportDetailPage() {
 
   if (error || !report) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-[#faf8f5] px-6 text-center">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[#fafaf5] px-6 text-center">
         <div className="max-w-md rounded-2xl border border-[#eae2d3] bg-white p-8 shadow-xs space-y-4">
           <h1 className="text-xl font-bold font-serif text-[#1c4123]" style={{ fontFamily: "Georgia, serif" }}>
             Laporan Tidak Ditemukan
@@ -110,7 +114,7 @@ export default function ReportDetailPage() {
           <div className="pt-2">
             <Link
               href="/reports"
-              className="inline-flex items-center gap-2 rounded-xl bg-[#2d6a36] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#22512a] transition shadow-xs"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#1e4d2b] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#163a20] transition shadow-xs"
             >
               &larr; Lihat Semua Laporan
             </Link>
@@ -123,26 +127,19 @@ export default function ReportDetailPage() {
   const statusBadge = getStatusBadge(report.status);
   const ai = report.ai_analysis;
   const severityBadge = getSeverityBadge(ai?.severity);
+  const displayTopics = report.topics && report.topics.length > 0
+    ? report.topics
+    : report.category ? [{ id: 0, name: report.category.name, slug: report.category.slug }] : [];
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#faf8f5] text-[#2c2926]">
+    <div className="flex min-h-screen flex-col bg-[#fafaf5] text-[#2c2926]">
       {/* Top Header */}
-      <header className="border-b border-[#eae2d3] bg-[#faf8f5]/90 backdrop-blur-xs sticky top-0 z-20">
+      <header className="border-b border-[#eae2d3] bg-[#fafaf5]/90 backdrop-blur-xs sticky top-0 z-20">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-2.5 transition-opacity hover:opacity-85">
-            <svg
-              className="h-6 w-6 text-[#2d6a36]"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" />
-              <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" />
-            </svg>
+            <div className="h-6 w-6 rounded-full bg-[#1e4d2b] text-white flex items-center justify-center text-xs font-bold font-serif">
+              C
+            </div>
             <span className="text-lg font-bold tracking-tight text-[#1c4123]" style={{ fontFamily: "Georgia, serif" }}>
               CiviLens
             </span>
@@ -157,7 +154,7 @@ export default function ReportDetailPage() {
             </Link>
             <Link
               href="/reports/create"
-              className="rounded-lg bg-[#2d6a36] px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-[#22512a] transition shadow-xs"
+              className="rounded-lg bg-[#1e4d2b] px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-[#163a20] transition shadow-xs"
             >
               + Buat Laporan
             </Link>
@@ -171,7 +168,7 @@ export default function ReportDetailPage() {
           {/* Newly Created Banner */}
           {isNewlyCreated && (
             <div className="rounded-2xl border border-[#cbe0ce] bg-[#f4f8f4] p-5 shadow-xs flex items-start gap-3.5 animate-in fade-in duration-300">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#2d6a36] text-white text-sm font-bold">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#1e4d2b] text-white text-sm font-bold">
                 ✓
               </div>
               <div className="space-y-1">
@@ -203,11 +200,16 @@ export default function ReportDetailPage() {
           {/* Report Main Header Card */}
           <div className="rounded-2xl border border-[#eae2d3] bg-white p-6 sm:p-8 shadow-xs space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#f0f4ee] pb-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full bg-[#f4f8f4] border border-[#cbe0ce] px-3 py-1 text-xs font-semibold text-[#22512a]">
-                  {report.category?.name || "Kategori Lingkungan"}
-                </span>
-                <span className="text-xs text-[#7a9a80] font-mono">
+              <div className="flex flex-wrap items-center gap-1.5">
+                {displayTopics.map((t, idx) => (
+                  <span
+                    key={idx}
+                    className="rounded-full bg-[#f4f8f4] border border-[#cbe0ce] px-2.5 py-0.5 text-xs font-semibold text-[#1e4d2b]"
+                  >
+                    #{t.name}
+                  </span>
+                ))}
+                <span className="text-xs text-[#7a9a80] font-mono ml-1">
                   ID: #{report.id}
                 </span>
               </div>
@@ -219,35 +221,31 @@ export default function ReportDetailPage() {
               </div>
             </div>
 
-            {/* Title & Date */}
+            {/* Title & Metadata */}
             <div>
-              <h1
-                className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#17361d]"
-                style={{ fontFamily: "Georgia, serif" }}
-              >
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#17361d]" style={{ fontFamily: "Georgia, serif" }}>
                 {report.title}
               </h1>
               <p className="mt-2 text-xs text-[#7a9a80]">
-                Dilaporkan pada {new Date(report.created_at).toLocaleDateString("id-ID", {
+                Dilaporkan pada{" "}
+                {new Date(report.created_at).toLocaleDateString("id-ID", {
                   weekday: "long",
                   day: "numeric",
                   month: "long",
                   year: "numeric",
                   hour: "2-digit",
                   minute: "2-digit",
-                })} WIB
+                })}{" "}
+                WIB
               </p>
             </div>
 
-            {/* Location Box */}
+            {/* Location Section */}
             {report.location && (
               <div className="rounded-xl bg-[#fafaf5] border border-[#eae2d3] p-4 space-y-1">
                 <p className="text-xs font-semibold uppercase tracking-wider text-[#1c4123] flex items-center gap-1.5">
-                  <svg className="h-4 w-4 text-[#2d6a36]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                    <circle cx="12" cy="10" r="3" />
-                  </svg>
-                  Lokasi Kejadian
+                  <IconPin className="h-4 w-4 text-[#1e4d2b]" />
+                  <span>Lokasi Kejadian</span>
                 </p>
                 <p className="text-sm font-medium text-[#2c2926] pl-5.5">
                   {report.location.address}
@@ -260,7 +258,7 @@ export default function ReportDetailPage() {
               </div>
             )}
 
-            {/* Description */}
+            {/* Problem Description */}
             <div className="space-y-2">
               <h2 className="text-xs font-semibold uppercase tracking-wider text-[#7a9a80]">
                 Deskripsi Masalah
@@ -270,30 +268,23 @@ export default function ReportDetailPage() {
               </p>
             </div>
 
-            {/* Media Gallery */}
+            {/* Attached Media */}
             {report.media && report.media.length > 0 && (
               <div className="space-y-3 pt-4 border-t border-[#f0f4ee]">
                 <h2 className="text-xs font-semibold uppercase tracking-wider text-[#7a9a80]">
                   Foto Bukti Terlampir ({report.media.length})
                 </h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {report.media.map((item) => (
                     <div
                       key={item.id}
                       className="rounded-xl overflow-hidden border border-[#cbe0ce] aspect-video bg-[#fafaf5] p-3 flex flex-col justify-between"
                     >
-                      <div className="flex items-center gap-2">
-                        <svg className="h-4 w-4 text-[#2d6a36] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                          <circle cx="8.5" cy="8.5" r="1.5" />
-                          <polyline points="21 15 16 10 5 21" />
-                        </svg>
-                        <span className="text-xs font-medium text-[#1c4123] truncate">
-                          {item.original_name}
-                        </span>
-                      </div>
+                      <span className="text-xs font-medium text-[#1c4123] truncate">
+                        {item.original_name}
+                      </span>
                       <div className="text-[11px] text-[#7a9a80]">
-                        {(item.size / 1024).toFixed(0)} KB • Terverifikasi
+                        {(item.size / 1024).toFixed(0)} KB &bull; Terverifikasi
                       </div>
                     </div>
                   ))}
@@ -302,12 +293,12 @@ export default function ReportDetailPage() {
             )}
           </div>
 
-          {/* AI Assessment & Analysis Card */}
+          {/* AI Assessment Panel */}
           <div className="rounded-2xl border border-[#cbe0ce] bg-white p-6 sm:p-8 shadow-xs space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#f0f4ee] pb-4">
               <div className="flex items-center gap-2.5">
                 <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#1e4d2b] text-white text-xs font-bold">
-                  AI
+                  <IconSparkles className="h-3.5 w-3.5" />
                 </span>
                 <h2 className="text-lg font-bold font-serif text-[#1e4d2b]" style={{ fontFamily: "Georgia, serif" }}>
                   Analisis Dampak Lingkungan (AI Assessment)
@@ -321,7 +312,23 @@ export default function ReportDetailPage() {
               )}
             </div>
 
-            {ai ? (
+            {!ai ? (
+              <div className="text-center py-6 space-y-2">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#1e4d2b] border-t-transparent mx-auto" />
+                <p className="text-xs text-[#57524d]">
+                  Model AI sedang menganalisis tingkat keparahan laporan ini...
+                </p>
+              </div>
+            ) : ai.status === "processing" || ai.status === "pending" ? (
+              <div className="rounded-xl bg-[#fafaf5] p-4 border border-[#eae2d3] text-xs text-[#57524d] flex items-center gap-3">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#1e4d2b] border-t-transparent shrink-0" />
+                <span>Analisis AI sedang diproses di antrean latar belakang...</span>
+              </div>
+            ) : ai.status === "failed" ? (
+              <div className="rounded-xl bg-amber-50 p-4 border border-amber-200 text-xs text-amber-800">
+                Analisis AI otomatis gagal diproses. Tim moderator akan meninjau laporan secara manual.
+              </div>
+            ) : (
               <div className="space-y-4">
                 {ai.summary && (
                   <div className="space-y-1">
@@ -337,7 +344,7 @@ export default function ReportDetailPage() {
                 {ai.analysis && (
                   <div className="space-y-1">
                     <h3 className="text-xs font-semibold uppercase tracking-wider text-[#7a9a80]">
-                      Analisis Objektif
+                      Penilaian Objektif & Dampak
                     </h3>
                     <p className="text-sm text-[#57524d] leading-relaxed whitespace-pre-line">
                       {ai.analysis}
@@ -346,22 +353,15 @@ export default function ReportDetailPage() {
                 )}
 
                 <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-[#f0f4ee] text-xs text-[#7a9a80]">
-                  <span>
-                    Tingkat Keyakinan Model: <strong className="text-[#1c4123]">{((ai.confidence || 0.95) * 100).toFixed(0)}%</strong>
-                  </span>
+                  {ai.confidence !== null && ai.confidence !== undefined && (
+                    <span>
+                      Tingkat Keyakinan Model: <strong className="text-[#1c4123]">{(ai.confidence * 100).toFixed(0)}%</strong>
+                    </span>
+                  )}
                   <span>
                     Status AI: <strong className="text-emerald-700 capitalize">{ai.status}</strong>
                   </span>
                 </div>
-              </div>
-            ) : (
-              <div className="rounded-xl bg-[#fafaf5] p-5 text-center space-y-2 border border-[#eae2d3]">
-                <p className="text-sm font-semibold text-[#1c4123]">
-                  Sedang Menganalisis Laporan...
-                </p>
-                <p className="text-xs text-[#7a9a80]">
-                  AI CiviLens sedang memproses data laporan dan foto bukti secara otomatis di antrean background. Muat ulang halaman dalam beberapa detik.
-                </p>
               </div>
             )}
           </div>
@@ -371,7 +371,7 @@ export default function ReportDetailPage() {
       {/* Footer */}
       <footer className="border-t border-[#eae2d3] py-6 text-center text-xs text-[#8c857e] mt-auto">
         <div className="mx-auto max-w-5xl px-6">
-          CiviLens • Platform Pelaporan Lingkungan Warga
+          CiviLens &bull; Platform Pelaporan Lingkungan Warga
         </div>
       </footer>
     </div>

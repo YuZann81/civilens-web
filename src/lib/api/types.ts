@@ -91,6 +91,14 @@ export interface Category {
   description?: string | null;
 }
 
+export interface Topic {
+  id: number;
+  name: string;
+  slug: string;
+  is_official?: boolean;
+  reports_count?: number;
+}
+
 export interface ReportLocation {
   address: string;
   latitude: number | null;
@@ -120,6 +128,7 @@ export interface Report {
   title: string;
   description: string;
   category?: Category | null;
+  topics?: Topic[];
   location?: ReportLocation | null;
   media?: ReportMedia[];
   ai_analysis?: ReportAiAnalysis | null;
@@ -131,7 +140,8 @@ export interface Report {
 export interface CreateReportPayload {
   title: string;
   description: string;
-  category_id: number;
+  category_id?: number | null;
+  topics?: string[];
   location: {
     address: string;
     latitude?: number | null;
@@ -142,6 +152,7 @@ export interface CreateReportPayload {
 export interface ReportFilterParams {
   mine?: boolean;
   category_id?: number;
+  topic?: string;
   status?: string;
   sort?: string;
   order?: "asc" | "desc";
