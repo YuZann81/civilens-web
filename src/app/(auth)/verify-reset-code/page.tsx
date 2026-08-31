@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -56,7 +56,7 @@ function LeftPanel() {
           Verifikasi Kode Keamanan
         </p>
         <p className="mt-2 text-sm leading-relaxed text-[var(--text-secondary)]">
-          Masukkan 6 digit kode OTP yang kami kirimkan
+          Masukkan 6 karakter kode OTP yang kami kirimkan
           <br />
           ke email Anda untuk melanjutkan reset kata sandi.
         </p>
@@ -72,12 +72,14 @@ function VerifyResetCodeForm() {
 
   const emailParam = searchParams?.get("email") || "";
   const [email, setEmail] = useState(() => emailParam);
-  const [code, setCode] = useState("");
+  const [digits, setDigits] = useState<string[]>(["", "", "", "", "", ""]);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [cooldown, setCooldown] = useState(60);
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
+
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -87,12 +89,69 @@ function VerifyResetCodeForm() {
     return () => clearInterval(timer);
   }, [cooldown]);
 
+  const fullCode = digits.join("");
+
+  const handleDigitChange = (index: number, value: string) => {
+    const cleanChar = value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+
+    if (!cleanChar) {
+      const newDigits = [...digits];
+      newDigits[index] = "";
+      setDigits(newDigits);
+      return;
+    }
+
+    const char = cleanChar.slice(-1);
+    const newDigits = [...digits];
+    newDigits[index] = char;
+    setDigits(newDigits);
+
+    // Auto-focus next box if not on the last box
+    if (index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace") {
+      if (!digits[index] && index > 0) {
+        inputRefs.current[index - 1]?.focus();
+      }
+    } else if (e.key === "ArrowLeft" && index > 0) {
+      e.preventDefault();
+      inputRefs.current[index - 1]?.focus();
+    } else if (e.key === "ArrowRight" && index < 5) {
+      e.preventDefault();
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData
+      .getData("text")
+      .replace(/[^A-Za-z0-9]/g, "")
+      .toUpperCase()
+      .slice(0, 6);
+
+    if (!pastedData) return;
+
+    const newDigits = [...digits];
+    for (let i = 0; i < 6; i++) {
+      newDigits[i] = pastedData[i] || "";
+    }
+    setDigits(newDigits);
+
+    const targetIndex = Math.min(pastedData.length, 5);
+    inputRefs.current[targetIndex]?.focus();
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isLoading) return;
 
-    if (!code || code.length !== 6 || !/^[0-9]{6}$/.test(code)) {
-      setError("Kode verifikasi harus terdiri dari 6 digit angka.");
+    if (!fullCode || fullCode.length !== 6 || !/^[A-Za-z0-9]{6}$/.test(fullCode)) {
+      setError("Kode verifikasi harus terdiri dari 6 karakter huruf atau angka.");
       return;
     }
 
@@ -103,7 +162,7 @@ function VerifyResetCodeForm() {
     try {
       const response = await verifyResetCode({
         email,
-        code,
+        code: fullCode,
       });
 
       // Secure in-memory storage (never stored in URL, localStorage, or sessionStorage)
@@ -133,9 +192,10 @@ function VerifyResetCodeForm() {
 
     try {
       await forgotPassword(email);
-      setMessage("Kode verifikasi 6 digit baru telah dikirim ke email Anda.");
+      setMessage("Kode verifikasi 6 karakter baru telah dikirim ke email Anda.");
       setCooldown(60);
-      setCode("");
+      setDigits(["", "", "", "", "", ""]);
+      inputRefs.current[0]?.focus();
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message || "Gagal mengirim ulang kode. Coba beberapa saat lagi.");
@@ -149,16 +209,20 @@ function VerifyResetCodeForm() {
 
   const inputStyle: React.CSSProperties = {
     background: "rgba(255,255,255,0.07)",
-    border: "1px solid rgba(208,240,192,0.2)",
+    border: error ? "1px solid rgba(239,68,68,0.6)" : "1px solid rgba(208,240,192,0.2)",
     color: "#fafaf5",
   };
 
   const onFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    e.currentTarget.style.borderColor = "rgba(208,240,192,0.5)";
+    e.currentTarget.style.borderColor = error
+      ? "rgba(239,68,68,0.8)"
+      : "rgba(208,240,192,0.6)";
   };
 
   const onBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    e.currentTarget.style.borderColor = "rgba(208,240,192,0.2)";
+    e.currentTarget.style.borderColor = error
+      ? "rgba(239,68,68,0.6)"
+      : "rgba(208,240,192,0.2)";
   };
 
   return (
@@ -179,7 +243,8 @@ function VerifyResetCodeForm() {
         Verifikasi <span style={{ color: "var(--sage-light)" }}>Kode OTP</span>
       </h1>
       <p className="text-sm mb-6 text-center text-[#8fbf7f]">
-        Kode telah dikirim ke <strong className="text-[#fafaf5] font-medium">{email || "email Anda"}</strong>.
+        Kode 6 karakter telah dikirim ke{" "}
+        <strong className="text-[#fafaf5] font-medium">{email || "email Anda"}</strong>.
       </p>
 
       {message && (
@@ -215,37 +280,72 @@ function VerifyResetCodeForm() {
           />
         </div>
 
-        {/* 6-Digit Code */}
-        <div className="flex flex-col gap-1">
-          <label htmlFor="code" className="text-xs tracking-wide text-[#8fbf7f]">
-            Kode 6 Digit
+        {/* 6-Box Segmented Alphanumeric OTP Code */}
+        <div className="flex flex-col gap-2">
+          <label className="text-xs tracking-wide text-[#8fbf7f]">
+            Kode Verifikasi 6 Karakter (A-Z, 0-9)
           </label>
-          <input
-            id="code"
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            maxLength={6}
-            autoComplete="one-time-code"
-            value={code}
-            onChange={(e) => {
-              const val = e.target.value.replace(/[^0-9]/g, "").slice(0, 6);
-              setCode(val);
-            }}
-            placeholder="123456"
-            required
-            className="w-full px-4 py-3 rounded-xl text-center font-mono tracking-widest text-lg outline-none transition-colors"
-            style={inputStyle}
-            onFocus={onFocus}
-            onBlur={onBlur}
-          />
+          <div className="flex items-center justify-center gap-1.5 sm:gap-2.5">
+            {/* First 3 boxes */}
+            <div className="flex gap-1.5 sm:gap-2">
+              {[0, 1, 2].map((i) => (
+                <input
+                  key={i}
+                  ref={(el) => {
+                    inputRefs.current[i] = el;
+                  }}
+                  id={i === 0 ? "otp-box-0" : undefined}
+                  type="text"
+                  autoComplete="one-time-code"
+                  maxLength={1}
+                  value={digits[i]}
+                  onChange={(e) => handleDigitChange(i, e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(i, e)}
+                  onPaste={i === 0 ? handlePaste : undefined}
+                  className="w-10 h-12 sm:w-12 sm:h-14 rounded-xl text-center font-mono font-bold text-lg sm:text-xl uppercase outline-none transition-all focus:scale-105"
+                  style={inputStyle}
+                  onFocus={onFocus}
+                  onBlur={onBlur}
+                  aria-label={`Digit ${i + 1}`}
+                />
+              ))}
+            </div>
+
+            {/* Visual Middle Dash Divider */}
+            <div className="text-[var(--sage-light)] font-bold text-lg opacity-60 select-none px-0.5">
+              &ndash;
+            </div>
+
+            {/* Last 3 boxes */}
+            <div className="flex gap-1.5 sm:gap-2">
+              {[3, 4, 5].map((i) => (
+                <input
+                  key={i}
+                  ref={(el) => {
+                    inputRefs.current[i] = el;
+                  }}
+                  type="text"
+                  autoComplete="one-time-code"
+                  maxLength={1}
+                  value={digits[i]}
+                  onChange={(e) => handleDigitChange(i, e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(i, e)}
+                  className="w-10 h-12 sm:w-12 sm:h-14 rounded-xl text-center font-mono font-bold text-lg sm:text-xl uppercase outline-none transition-all focus:scale-105"
+                  style={inputStyle}
+                  onFocus={onFocus}
+                  onBlur={onBlur}
+                  aria-label={`Digit ${i + 1}`}
+                />
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Verify Button */}
         <button
           type="submit"
-          disabled={isLoading || code.length !== 6}
-          className="w-full py-3 rounded-xl font-semibold text-sm transition-all active:scale-95 mt-1 disabled:opacity-50 disabled:cursor-not-allowed text-[var(--green-deep)] bg-[var(--cream)] hover:bg-[#e8ede3]"
+          disabled={isLoading || fullCode.length !== 6}
+          className="w-full py-3 rounded-xl font-semibold text-sm transition-all active:scale-95 mt-2 disabled:opacity-50 disabled:cursor-not-allowed text-[var(--green-deep)] bg-[var(--cream)] hover:bg-[#e8ede3]"
         >
           {isLoading ? "Memverifikasi..." : "Verifikasi Kode"}
         </button>

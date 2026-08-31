@@ -23,7 +23,7 @@ describe("VerifyResetCodePage", () => {
     mockSearchParams = new URLSearchParams("email=user%40example.com");
   });
 
-  it("renders 6-digit code input with prefilled email", () => {
+  it("renders 6-box alphanumeric OTP inputs with prefilled email", () => {
     render(
       <AuthProvider>
         <VerifyResetCodePage />
@@ -33,30 +33,58 @@ describe("VerifyResetCodePage", () => {
     expect(screen.getByText("Verifikasi Kode Keamanan")).toBeDefined();
     expect(screen.getByText("Kode OTP")).toBeDefined();
     expect(screen.getByLabelText("Alamat Email")).toBeDefined();
-    expect(screen.getByLabelText("Kode 6 Digit")).toBeDefined();
     expect(screen.getByRole("button", { name: "Verifikasi Kode" })).toBeDefined();
+
+    // 6 digit boxes
+    for (let i = 1; i <= 6; i++) {
+      expect(screen.getByLabelText(`Digit ${i}`)).toBeDefined();
+    }
 
     const emailInput = screen.getByLabelText("Alamat Email") as HTMLInputElement;
     expect(emailInput.value).toBe("user@example.com");
   });
 
-  it("restricts code input to 6 digits", () => {
+  it("handles typing individual alphanumeric characters with uppercase normalization", () => {
     render(
       <AuthProvider>
         <VerifyResetCodePage />
       </AuthProvider>
     );
 
-    const codeInput = screen.getByLabelText("Kode 6 Digit") as HTMLInputElement;
+    const box1 = screen.getByLabelText("Digit 1") as HTMLInputElement;
+    const box2 = screen.getByLabelText("Digit 2") as HTMLInputElement;
 
-    fireEvent.change(codeInput, { target: { value: "12345678" } });
-    expect(codeInput.value).toBe("123456");
+    fireEvent.change(box1, { target: { value: "a" } });
+    expect(box1.value).toBe("A");
 
-    fireEvent.change(codeInput, { target: { value: "abc12xyz3" } });
-    expect(codeInput.value).toBe("123");
+    fireEvent.change(box2, { target: { value: "7" } });
+    expect(box2.value).toBe("7");
   });
 
-  it("submits valid 6-digit code, stores auth in memory, and redirects to clean /reset-password", async () => {
+  it("handles pasting a 6-character alphanumeric code across all boxes", () => {
+    render(
+      <AuthProvider>
+        <VerifyResetCodePage />
+      </AuthProvider>
+    );
+
+    const box1 = screen.getByLabelText("Digit 1");
+
+    fireEvent.paste(box1, {
+      clipboardData: {
+        getData: () => "a7k-2m9",
+      },
+    });
+
+    expect((screen.getByLabelText("Digit 1") as HTMLInputElement).value).toBe("A");
+    expect((screen.getByLabelText("Digit 2") as HTMLInputElement).value).toBe("7");
+    expect((screen.getByLabelText("Digit 3") as HTMLInputElement).value).toBe("K");
+    expect((screen.getByLabelText("Digit 4") as HTMLInputElement).value).toBe("2");
+    expect((screen.getByLabelText("Digit 5") as HTMLInputElement).value).toBe("M");
+    expect((screen.getByLabelText("Digit 6") as HTMLInputElement).value).toBe("9");
+  });
+
+  it("submits valid 6-character code, stores auth in memory, and redirects to clean /reset-password", async () => {
     const verifySpy = vi.spyOn(apiClient, "verifyResetCode").mockResolvedValue({
       reset_authorization: "auth-token-xyz-12345",
     });
@@ -67,18 +95,23 @@ describe("VerifyResetCodePage", () => {
       </AuthProvider>
     );
 
-    const codeInput = screen.getByLabelText("Kode 6 Digit");
-    const submitBtn = screen.getByRole("button", { name: "Verifikasi Kode" });
+    // Paste full 6-character alphanumeric code
+    const box1 = screen.getByLabelText("Digit 1");
+    fireEvent.paste(box1, {
+      clipboardData: {
+        getData: () => "A7K2M9",
+      },
+    });
 
-    fireEvent.change(codeInput, { target: { value: "654321" } });
+    const submitBtn = screen.getByRole("button", { name: "Verifikasi Kode" });
     fireEvent.click(submitBtn);
 
     await waitFor(() => {
       expect(verifySpy).toHaveBeenCalledWith({
         email: "user@example.com",
-        code: "654321",
+        code: "A7K2M9",
       });
-      // URL must be clean without any token / authorization exposed
+      // Clean URL navigation without exposing token in query params
       expect(mockPush).toHaveBeenCalledWith("/reset-password");
     });
   });
@@ -94,10 +127,14 @@ describe("VerifyResetCodePage", () => {
       </AuthProvider>
     );
 
-    const codeInput = screen.getByLabelText("Kode 6 Digit");
-    const submitBtn = screen.getByRole("button", { name: "Verifikasi Kode" });
+    const box1 = screen.getByLabelText("Digit 1");
+    fireEvent.paste(box1, {
+      clipboardData: {
+        getData: () => "XXXXXX",
+      },
+    });
 
-    fireEvent.change(codeInput, { target: { value: "000000" } });
+    const submitBtn = screen.getByRole("button", { name: "Verifikasi Kode" });
     fireEvent.click(submitBtn);
 
     await waitFor(() => {
