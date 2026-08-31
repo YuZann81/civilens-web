@@ -1,20 +1,25 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth/auth-context";
 import { getReports, getTopics } from "@/lib/api/client";
 import { Report, Topic } from "@/lib/api/types";
-import { IconPin, IconHashtag } from "@/components/ui/icons";
+import { IconPin, IconHashtag, IconSearch } from "@/components/ui/icons";
 
 function getStatusBadge(status: string) {
   switch (status) {
     case "resolved":
     case "selesai":
       return { label: "Selesai", bg: "bg-emerald-50 text-emerald-800 border-emerald-200" };
+    case "in_progress":
+      return { label: "Ditindaklanjuti", bg: "bg-purple-50 text-purple-800 border-purple-200" };
+    case "verified":
+      return { label: "Terverifikasi", bg: "bg-teal-50 text-teal-800 border-teal-200" };
     case "under_review":
     case "diproses":
-      return { label: "Diproses", bg: "bg-blue-50 text-blue-800 border-blue-200" };
+      return { label: "Peninjauan", bg: "bg-blue-50 text-blue-800 border-blue-200" };
     case "rejected":
     case "ditolak":
       return { label: "Ditolak", bg: "bg-red-50 text-red-800 border-red-200" };
@@ -24,8 +29,10 @@ function getStatusBadge(status: string) {
   }
 }
 
-export default function ReportsFeedPage() {
+function ReportsFeedContent() {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const initialTopic = searchParams.get("topic") || "";
 
   const [reports, setReports] = useState<Report[]>([]);
   const [topics, setTopics] = useState<Topic[]>([]);
@@ -33,8 +40,11 @@ export default function ReportsFeedPage() {
   const [error, setError] = useState("");
 
   // Filters
-  const [selectedTopic, setSelectedTopic] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedTopic, setSelectedTopic] = useState<string>(initialTopic);
   const [selectedStatus, setSelectedStatus] = useState<string>("");
+  const [selectedSeverity, setSelectedSeverity] = useState<string>("");
+  const [selectedSort, setSelectedSort] = useState<string>("created_at");
   const [mineOnly, setMineOnly] = useState(false);
 
   useEffect(() => {
@@ -47,8 +57,11 @@ export default function ReportsFeedPage() {
     let mounted = true;
 
     getReports({
+      q: searchQuery.trim() || undefined,
       topic: selectedTopic || undefined,
       status: selectedStatus || undefined,
+      severity: selectedSeverity || undefined,
+      sort: selectedSort || undefined,
       mine: mineOnly ? true : undefined,
     })
       .then((res) => {
@@ -71,7 +84,7 @@ export default function ReportsFeedPage() {
     return () => {
       mounted = false;
     };
-  }, [selectedTopic, selectedStatus, mineOnly]);
+  }, [searchQuery, selectedTopic, selectedStatus, selectedSeverity, selectedSort, mineOnly]);
 
   return (
     <div className="flex min-h-screen flex-col bg-[#fafaf5] text-[#2c2926]">
@@ -130,6 +143,18 @@ export default function ReportsFeedPage() {
 
           {/* Filter Bar */}
           <div className="flex flex-wrap items-center gap-3 p-4 rounded-2xl bg-white border border-[#eae2d3] shadow-xs text-xs">
+            {/* Search Input */}
+            <div className="relative flex-1 min-w-[200px]">
+              <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#7a9a80]" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Cari judul, kata kunci, atau alamat..."
+                className="w-full rounded-xl border border-[#c8dfc8] bg-[#fafaf5] pl-8 pr-3 py-1.5 text-xs text-[#2c2926] outline-none focus:border-[#1e4d2b] focus:bg-white"
+              />
+            </div>
+
             <div className="flex items-center gap-2">
               <span className="font-semibold text-[#1c4123] flex items-center gap-1">
                 <IconHashtag className="h-3.5 w-3.5 text-[#1e4d2b]" />
@@ -158,9 +183,39 @@ export default function ReportsFeedPage() {
               >
                 <option value="">Semua Status</option>
                 <option value="pending">Menunggu</option>
-                <option value="under_review">Diproses</option>
+                <option value="under_review">Peninjauan</option>
+                <option value="verified">Terverifikasi</option>
+                <option value="in_progress">Ditindaklanjuti</option>
                 <option value="resolved">Selesai</option>
                 <option value="rejected">Ditolak</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-[#1c4123]">Keparahan AI:</span>
+              <select
+                value={selectedSeverity}
+                onChange={(e) => setSelectedSeverity(e.target.value)}
+                className="rounded-lg border border-[#cbe0ce] bg-[#fafaf5] px-3 py-1.5 text-xs text-[#2c2926] outline-none"
+              >
+                <option value="">Semua</option>
+                <option value="critical">Kritis</option>
+                <option value="high">Tinggi</option>
+                <option value="medium">Sedang</option>
+                <option value="low">Rendah</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-[#1c4123]">Urutkan:</span>
+              <select
+                value={selectedSort}
+                onChange={(e) => setSelectedSort(e.target.value)}
+                className="rounded-lg border border-[#cbe0ce] bg-[#fafaf5] px-3 py-1.5 text-xs text-[#2c2926] outline-none"
+              >
+                <option value="created_at">Terbaru</option>
+                <option value="reactions_count">Dukungan Terbanyak</option>
+                <option value="priority">Prioritas AI</option>
               </select>
             </div>
           </div>
@@ -275,5 +330,22 @@ export default function ReportsFeedPage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+export default function ReportsFeedPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-[#fafaf5]">
+          <div className="text-center space-y-2">
+            <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#1e4d2b] border-t-transparent mx-auto" />
+            <p className="text-xs text-[#57524d]">Memuat feed laporan...</p>
+          </div>
+        </div>
+      }
+    >
+      <ReportsFeedContent />
+    </Suspense>
   );
 }

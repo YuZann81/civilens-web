@@ -123,16 +123,118 @@ export interface ReportAiAnalysis {
   completed_at?: string | null;
 }
 
+export interface ReportComment {
+  id: number;
+  report_id: number;
+  parent_id?: number | null;
+  content: string;
+  is_official: boolean;
+  user?: {
+    id: number;
+    name: string;
+    role: string;
+  } | null;
+  replies?: ReportComment[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ReportStatusHistory {
+  id: number;
+  status: string;
+  notes?: string | null;
+  actor_role: string;
+  actor_name: string;
+  created_at: string;
+}
+
+export interface InAppNotification {
+  id: number;
+  type: string;
+  title: string;
+  message: string;
+  link?: string | null;
+  read_at?: string | null;
+  is_read: boolean;
+  created_at: string;
+}
+
+export interface ReportFlag {
+  id: number;
+  report_id: number;
+  reason: string;
+  description?: string | null;
+  status: "pending" | "reviewed" | "dismissed" | "actioned" | string;
+  reporter?: {
+    id: number;
+    name: string;
+  } | null;
+  report?: {
+    id: number;
+    title: string;
+    status: string;
+  } | null;
+  moderator?: {
+    id: number;
+    name: string;
+  } | null;
+  moderator_notes?: string | null;
+  moderated_at?: string | null;
+  created_at: string;
+}
+
+export interface GovernmentOverviewMetrics {
+  total_reports: number;
+  pending_reports: number;
+  under_review_reports: number;
+  verified_reports: number;
+  in_progress_reports: number;
+  resolved_reports: number;
+  rejected_reports: number;
+  closed_reports: number;
+  high_priority_count: number;
+  resolution_rate: number;
+  severity_breakdown: {
+    critical: number;
+    high: number;
+    medium: number;
+    low: number;
+  };
+  top_topics: Topic[];
+}
+
+export interface UserProfile {
+  id: number;
+  name: string;
+  role: string;
+  status: string;
+  total_reports: number;
+  resolved_reports: number;
+  member_since: string;
+  recent_reports?: Report[];
+}
+
 export interface Report {
   id: number;
   title: string;
   description: string;
+  author?: {
+    id: number;
+    name: string;
+    role: string;
+  } | null;
   category?: Category | null;
   topics?: Topic[];
   location?: ReportLocation | null;
   media?: ReportMedia[];
   ai_analysis?: ReportAiAnalysis | null;
   status: "pending" | "under_review" | "resolved" | "rejected" | string;
+  reactions_count?: number;
+  user_reacted?: boolean;
+  bookmarks_count?: number;
+  user_bookmarked?: boolean;
+  comments_count?: number;
+  status_histories?: ReportStatusHistory[];
   created_at: string;
   updated_at: string;
 }
@@ -153,7 +255,11 @@ export interface ReportFilterParams {
   mine?: boolean;
   category_id?: number;
   topic?: string;
+  q?: string;
   status?: string;
+  severity?: string;
+  from?: string;
+  to?: string;
   sort?: string;
   order?: "asc" | "desc";
   page?: number;

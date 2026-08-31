@@ -3,21 +3,55 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
-import { getReport } from "@/lib/api/client";
+import { useAuth } from "@/lib/auth/auth-context";
+import {
+  getReport,
+  retryReportAiAnalysis,
+  toggleReportReaction,
+  toggleReportBookmark,
+} from "@/lib/api/client";
 import { Report } from "@/lib/api/types";
+import ReportComments from "@/components/reports/report-comments";
+import ReportTimeline from "@/components/reports/report-timeline";
+import FlagReportModal from "@/components/reports/flag-report-modal";
 import {
   IconPin,
   IconSparkles,
+  IconThumbsUp,
+  IconBookmark,
+  IconUser,
+  IconShield,
 } from "@/components/ui/icons";
 
 function getStatusBadge(status: string) {
   switch (status) {
+    case "closed":
+    case "ditutup":
+      return {
+        label: "Ditutup Resmi",
+        bg: "bg-gray-100 border-gray-300 text-gray-800",
+        dot: "bg-gray-500",
+      };
     case "resolved":
     case "selesai":
       return {
         label: "Selesai Ditindaklanjuti",
         bg: "bg-emerald-50 border-emerald-200 text-emerald-800",
         dot: "bg-emerald-500",
+      };
+    case "in_progress":
+    case "ditindaklanjuti":
+      return {
+        label: "Sedang Ditindaklanjuti",
+        bg: "bg-purple-50 border-purple-200 text-purple-800",
+        dot: "bg-purple-500",
+      };
+    case "verified":
+    case "terverifikasi":
+      return {
+        label: "Terverifikasi",
+        bg: "bg-teal-50 border-teal-200 text-teal-800",
+        dot: "bg-teal-500",
       };
     case "under_review":
     case "diproses":
@@ -61,13 +95,19 @@ export default function ReportDetailPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const reportId = params?.id as string;
+  const { user } = useAuth();
 
   const [report, setReport] = useState<Report | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isRetryingAi, setIsRetryingAi] = useState(false);
+  const [reacting, setReacting] = useState(false);
+  const [bookmarking, setBookmarking] = useState(false);
+  const [flagModalOpen, setFlagModalOpen] = useState(false);
 
   const isNewlyCreated = searchParams?.get("created") === "1";
 
+  // Initial load
   useEffect(() => {
     if (!reportId) return;
 
@@ -89,6 +129,132 @@ export default function ReportDetailPage() {
       mounted = false;
     };
   }, [reportId]);
+
+  // Polling while AI analysis is pending/processing
+  useEffect(() => {
+    if (!report || !reportId) return;
+
+    const aiStatus = report.ai_analysis?.status;
+    if (aiStatus !== "pending" && aiStatus !== "processing") return;
+
+    const interval = setInterval(() => {
+      getReport(reportId)
+        .then((updated) => {
+          setReport(updated);
+        })
+        .catch(() => {});
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [report, reportId]);
+
+  const handleRetryAi = async () => {
+    if (isRetryingAi || !reportId) return;
+    setIsRetryingAi(true);
+
+    try {
+      const updated = await retryReportAiAnalysis(reportId);
+      setReport(updated);
+    } catch {
+      // Handled silently
+    } finally {
+      setIsRetryingAi(false);
+    }
+  };
+
+  const handleToggleReaction = async () => {
+    if (!user || reacting || !report) return;
+    setReacting(true);
+
+    const previousReacted = report.user_reacted;
+    const previousCount = report.reactions_count || 0;
+    const nextReacted = !previousReacted;
+    const nextCount = nextReacted ? previousCount + 1 : Math.max(0, previousCount - 1);
+
+    // Optimistic UI update
+    setReport((prev) =>
+      prev
+        ? {
+            ...prev,
+            user_reacted: nextReacted,
+            reactions_count: nextCount,
+          }
+        : prev
+    );
+
+    try {
+      const res = await toggleReportReaction(report.id, "support");
+      setReport((prev) =>
+        prev
+          ? {
+              ...prev,
+              user_reacted: res.reacted,
+              reactions_count: res.reactions_count,
+            }
+          : prev
+      );
+    } catch {
+      // Rollback on failure
+      setReport((prev) =>
+        prev
+          ? {
+              ...prev,
+              user_reacted: previousReacted,
+              reactions_count: previousCount,
+            }
+          : prev
+      );
+    } finally {
+      setReacting(false);
+    }
+  };
+
+  const handleToggleBookmark = async () => {
+    if (!user || bookmarking || !report) return;
+    setBookmarking(true);
+
+    const previousBookmarked = report.user_bookmarked;
+    const previousCount = report.bookmarks_count || 0;
+    const nextBookmarked = !previousBookmarked;
+    const nextCount = nextBookmarked ? previousCount + 1 : Math.max(0, previousCount - 1);
+
+    // Optimistic UI update
+    setReport((prev) =>
+      prev
+        ? {
+            ...prev,
+            user_bookmarked: nextBookmarked,
+            bookmarks_count: nextCount,
+          }
+        : prev
+    );
+
+    try {
+      const res = await toggleReportBookmark(report.id);
+      setReport((prev) =>
+        prev
+          ? {
+              ...prev,
+              user_bookmarked: res.bookmarked,
+              bookmarks_count: res.bookmarks_count,
+            }
+          : prev
+      );
+    } catch {
+      // Rollback on failure
+      setReport((prev) =>
+        prev
+          ? {
+              ...prev,
+              user_bookmarked: previousBookmarked,
+              bookmarks_count: previousCount,
+            }
+          : prev
+      );
+    } finally {
+      setBookmarking(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -152,6 +318,14 @@ export default function ReportDetailPage() {
             >
               Semua Laporan
             </Link>
+            {user && (
+              <Link
+                href="/bookmarks"
+                className="text-xs font-semibold text-[#4a6b52] hover:text-[#1e4d2b] transition"
+              >
+                Tersimpan
+              </Link>
+            )}
             <Link
               href="/reports/create"
               className="rounded-lg bg-[#1e4d2b] px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-[#163a20] transition shadow-xs"
@@ -226,18 +400,77 @@ export default function ReportDetailPage() {
               <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#17361d]" style={{ fontFamily: "Georgia, serif" }}>
                 {report.title}
               </h1>
-              <p className="mt-2 text-xs text-[#7a9a80]">
-                Dilaporkan pada{" "}
-                {new Date(report.created_at).toLocaleDateString("id-ID", {
-                  weekday: "long",
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}{" "}
-                WIB
-              </p>
+              <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-[#7a9a80]">
+                {report.author && (
+                  <Link
+                    href={`/users/${report.author.id}`}
+                    className="flex items-center gap-1 font-semibold text-[#1c4123] hover:underline"
+                  >
+                    <IconUser className="h-3.5 w-3.5 text-[#1e4d2b]" />
+                    <span>{report.author.name}</span>
+                  </Link>
+                )}
+                <span>&bull;</span>
+                <span>
+                  Dilaporkan pada{" "}
+                  {new Date(report.created_at).toLocaleDateString("id-ID", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}{" "}
+                  WIB
+                </span>
+              </div>
+            </div>
+
+            {/* Civic Actions Bar: Support & Bookmark */}
+            <div className="flex items-center gap-2.5 pt-2 border-t border-[#f0f4ee]">
+              <button
+                type="button"
+                onClick={handleToggleReaction}
+                disabled={!user || reacting}
+                className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-semibold transition ${
+                  report.user_reacted
+                    ? "bg-[#1e4d2b] text-white border-[#1e4d2b]"
+                    : "bg-[#fafaf5] text-[#1c4123] border-[#cbe0ce] hover:bg-[#f4f8f4]"
+                } ${!user ? "opacity-60 cursor-not-allowed" : ""}`}
+                title={user ? "Beri dukungan warga pada laporan ini" : "Masuk untuk memberi dukungan"}
+              >
+                <IconThumbsUp className="h-4 w-4" />
+                <span>{report.user_reacted ? "Didukung" : "Dukung Laporan"}</span>
+                <span className="ml-1 rounded-full bg-black/10 px-1.5 py-0.2 text-[10px]">
+                  {report.reactions_count || 0}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleToggleBookmark}
+                disabled={!user || bookmarking}
+                className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-semibold transition ${
+                  report.user_bookmarked
+                    ? "bg-[#7a4400] text-white border-[#7a4400]"
+                    : "bg-[#fafaf5] text-[#57524d] border-[#cbe0ce] hover:bg-[#f4f8f4]"
+                } ${!user ? "opacity-60 cursor-not-allowed" : ""}`}
+                title={user ? "Simpan laporan ke bookmark" : "Masuk untuk menyimpan"}
+              >
+                <IconBookmark className="h-4 w-4" />
+                <span>{report.user_bookmarked ? "Tersimpan" : "Simpan"}</span>
+              </button>
+
+              {user && user.id !== report.author?.id && (
+                <button
+                  type="button"
+                  onClick={() => setFlagModalOpen(true)}
+                  className="ml-auto inline-flex items-center gap-1 rounded-xl px-3 py-2 text-xs font-medium text-[#8c857e] hover:text-red-700 hover:bg-red-50 transition"
+                  title="Laporkan indikasi pelanggaran"
+                >
+                  <IconShield className="h-3.5 w-3.5" />
+                  <span>Laporkan</span>
+                </button>
+              )}
             </div>
 
             {/* Location Section */}
@@ -268,29 +501,32 @@ export default function ReportDetailPage() {
               </p>
             </div>
 
-            {/* Attached Media */}
-            {report.media && report.media.length > 0 && (
-              <div className="space-y-3 pt-4 border-t border-[#f0f4ee]">
-                <h2 className="text-xs font-semibold uppercase tracking-wider text-[#7a9a80]">
-                  Foto Bukti Terlampir ({report.media.length})
-                </h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {report.media.map((item) => (
-                    <div
-                      key={item.id}
-                      className="rounded-xl overflow-hidden border border-[#cbe0ce] aspect-video bg-[#fafaf5] p-3 flex flex-col justify-between"
-                    >
-                      <span className="text-xs font-medium text-[#1c4123] truncate">
-                        {item.original_name}
-                      </span>
-                      <div className="text-[11px] text-[#7a9a80]">
-                        {(item.size / 1024).toFixed(0)} KB &bull; Terverifikasi
+              {/* Attached Media */}
+              {report.media && report.media.length > 0 && (
+                <div className="space-y-3 pt-4 border-t border-[#f0f4ee]">
+                  <h2 className="text-xs font-semibold uppercase tracking-wider text-[#7a9a80]">
+                    Foto Bukti Terlampir ({report.media.length})
+                  </h2>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {report.media.map((item) => (
+                      <div
+                        key={item.id}
+                        className="rounded-xl overflow-hidden border border-[#cbe0ce] aspect-video bg-[#fafaf5] p-3 flex flex-col justify-between"
+                      >
+                        <span className="text-xs font-medium text-[#1c4123] truncate">
+                          {item.original_name}
+                        </span>
+                        <div className="text-[11px] text-[#7a9a80] flex items-center justify-between">
+                          <span>{(item.size / 1024).toFixed(0)} KB</span>
+                          <span className="rounded-full bg-[#f4f8f4] border border-[#cbe0ce] px-2 py-0.2 text-[9px] font-semibold text-[#1e4d2b]">
+                            Terverifikasi
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
           </div>
 
           {/* AI Assessment Panel */}
@@ -305,7 +541,7 @@ export default function ReportDetailPage() {
                 </h2>
               </div>
 
-              {ai?.severity && (
+              {ai?.severity && ai.status === "completed" && (
                 <span className={`rounded-full border px-3 py-0.5 text-xs font-bold ${severityBadge.bg}`}>
                   Tingkat Keparahan: {severityBadge.label}
                 </span>
@@ -316,17 +552,37 @@ export default function ReportDetailPage() {
               <div className="text-center py-6 space-y-2">
                 <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#1e4d2b] border-t-transparent mx-auto" />
                 <p className="text-xs text-[#57524d]">
-                  Model AI sedang menganalisis tingkat keparahan laporan ini...
+                  Menyiapkan antrean analisis AI...
                 </p>
               </div>
             ) : ai.status === "processing" || ai.status === "pending" ? (
-              <div className="rounded-xl bg-[#fafaf5] p-4 border border-[#eae2d3] text-xs text-[#57524d] flex items-center gap-3">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#1e4d2b] border-t-transparent shrink-0" />
-                <span>Analisis AI sedang diproses di antrean latar belakang...</span>
+              <div className="rounded-xl bg-[#fafaf5] p-4 border border-[#eae2d3] text-xs text-[#57524d] flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#1e4d2b] border-t-transparent shrink-0" />
+                  <span>
+                    Analisis AI sedang diproses secara asinkron ({ai.status === "pending" ? "menunggu antrean" : "menganalisis bukti & konteks"})...
+                  </span>
+                </div>
+                <span className="text-[10px] text-[#7a9a80] hidden sm:inline">Memperbarui otomatis</span>
               </div>
             ) : ai.status === "failed" ? (
-              <div className="rounded-xl bg-amber-50 p-4 border border-amber-200 text-xs text-amber-800">
-                Analisis AI otomatis gagal diproses. Tim moderator akan meninjau laporan secara manual.
+              <div className="rounded-xl bg-amber-50 p-4 border border-amber-200 text-xs text-amber-900 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="font-medium">
+                    Analisis AI otomatis belum berhasil diselesaikan pada percobaan ini.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleRetryAi}
+                    disabled={isRetryingAi}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#1e4d2b] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#163a20] transition disabled:opacity-50"
+                  >
+                    <span>{isRetryingAi ? "Menjadwalkan..." : "Ulangi Analisis AI"}</span>
+                  </button>
+                </div>
+                <p className="text-[11px] text-amber-800">
+                  Laporan Anda tetap valid dan tersimpan aman. Tim penanganan tetap dapat memproses laporan ini.
+                </p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -358,6 +614,11 @@ export default function ReportDetailPage() {
                       Tingkat Keyakinan Model: <strong className="text-[#1c4123]">{(ai.confidence * 100).toFixed(0)}%</strong>
                     </span>
                   )}
+                  {report.media && report.media.length > 0 && (
+                    <span>
+                      Bukti Foto Dianalisis: <strong className="text-[#1c4123]">{Math.min(report.media.length, 3)} Foto</strong>
+                    </span>
+                  )}
                   <span>
                     Status AI: <strong className="text-emerald-700 capitalize">{ai.status}</strong>
                   </span>
@@ -365,6 +626,25 @@ export default function ReportDetailPage() {
               </div>
             )}
           </div>
+
+          {/* Transparent Status Timeline */}
+          <ReportTimeline
+            report={report}
+            onStatusUpdated={(updated) => setReport(updated)}
+          />
+
+          {/* Community Discussion & Replies Thread */}
+          <ReportComments
+            reportId={report.id}
+            initialCommentsCount={report.comments_count || 0}
+          />
+
+          {/* Citizen Moderation Flag Modal */}
+          <FlagReportModal
+            reportId={report.id}
+            isOpen={flagModalOpen}
+            onClose={() => setFlagModalOpen(false)}
+          />
         </div>
       </main>
 

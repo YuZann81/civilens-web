@@ -229,7 +229,7 @@ describe("TASK-011 Report UX & Dynamic Topic Integration", () => {
   });
 
   describe("ReportDetailPage", () => {
-    it("renders report details, topic chips, and AI analysis", async () => {
+    it("renders report details, topic chips, and AI analysis in completed state", async () => {
       vi.spyOn(apiClient, "getReport").mockResolvedValue(mockReport);
 
       render(
@@ -244,6 +244,61 @@ describe("TASK-011 Report UX & Dynamic Topic Integration", () => {
         expect(screen.getByText("Analisis Dampak Lingkungan (AI Assessment)")).toBeDefined();
         expect(screen.getByText("Penyumbatan parah dengan potensi banjir saat hujan deras.")).toBeDefined();
         expect(screen.getByText(/Tinggi/)).toBeDefined();
+      });
+    });
+
+    it("renders pending / processing AI analysis state gracefully", async () => {
+      const pendingReport: Report = {
+        ...mockReport,
+        ai_analysis: {
+          id: 1,
+          status: "processing",
+        },
+      };
+
+      vi.spyOn(apiClient, "getReport").mockResolvedValue(pendingReport);
+
+      render(
+        <AuthProvider>
+          <ReportDetailPage />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText(/Analisis AI sedang diproses secara asinkron/i)).toBeDefined();
+      });
+    });
+
+    it("renders failed AI state with retry button and triggers retry", async () => {
+      const failedReport: Report = {
+        ...mockReport,
+        ai_analysis: {
+          id: 1,
+          status: "failed",
+        },
+      };
+
+      vi.spyOn(apiClient, "getReport").mockResolvedValue(failedReport);
+      vi.spyOn(apiClient, "retryReportAiAnalysis").mockResolvedValue({
+        ...mockReport,
+        ai_analysis: { id: 2, status: "pending" },
+      });
+
+      render(
+        <AuthProvider>
+          <ReportDetailPage />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText(/Analisis AI otomatis belum berhasil diselesaikan/i)).toBeDefined();
+        expect(screen.getByRole("button", { name: /Ulangi Analisis AI/i })).toBeDefined();
+      });
+
+      fireEvent.click(screen.getByRole("button", { name: /Ulangi Analisis AI/i }));
+
+      await waitFor(() => {
+        expect(apiClient.retryReportAiAnalysis).toHaveBeenCalledWith("101");
       });
     });
   });

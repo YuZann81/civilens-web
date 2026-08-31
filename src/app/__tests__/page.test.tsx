@@ -7,7 +7,7 @@ import * as apiClient from "@/lib/api/client";
 import { ApiError } from "@/lib/api/types";
 
 describe("HomePage", () => {
-  it("renders brand heading, phase indicator, and auth actions when unauthenticated", async () => {
+  it("renders brand heading, hero section, topics, and auth actions when unauthenticated", async () => {
     vi.spyOn(apiClient, "getAuthUser").mockRejectedValue(new ApiError(401, "Unauthenticated."));
 
     render(
@@ -16,26 +16,30 @@ describe("HomePage", () => {
       </AuthProvider>
     );
 
-    expect(screen.getByText("CiviLens")).toBeDefined();
-    expect(screen.getAllByText("Phase 0 Foundation").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("CiviLens").length).toBeGreaterThan(0);
     expect(
       screen.getByRole("heading", {
         level: 1,
-        name: /making local environmental issues visible/i,
+        name: /laporkan masalah lingkungan/i,
       })
     ).toBeDefined();
 
+    // Check topics
+    expect(screen.getByText("#Sampah")).toBeDefined();
+    expect(screen.getByText("#Banjir")).toBeDefined();
+    expect(screen.getByText("#JalanRusak")).toBeDefined();
+
     await waitFor(() => {
       expect(screen.getByRole("link", { name: "Masuk" })).toBeDefined();
-      expect(screen.getByRole("link", { name: "Daftar" })).toBeDefined();
+      expect(screen.getByRole("link", { name: "Daftar Warga" })).toBeDefined();
     });
 
     // Check hrefs
     expect(screen.getByRole("link", { name: "Masuk" }).getAttribute("href")).toBe("/login");
-    expect(screen.getByRole("link", { name: "Daftar" }).getAttribute("href")).toBe("/register");
+    expect(screen.getByRole("link", { name: "Daftar Warga" }).getAttribute("href")).toBe("/register");
   });
 
-  it("toggles mobile menu and displays mobile auth links", async () => {
+  it("toggles mobile menu and displays mobile navigation", async () => {
     vi.spyOn(apiClient, "getAuthUser").mockRejectedValue(new ApiError(401, "Unauthenticated."));
 
     render(
@@ -52,7 +56,26 @@ describe("HomePage", () => {
     fireEvent.click(toggleBtn);
 
     expect(screen.getAllByRole("link", { name: "Masuk" }).length).toBe(2);
-    expect(screen.getAllByRole("link", { name: "Daftar" }).length).toBe(2);
+    expect(screen.getByRole("link", { name: "Daftar" })).toBeDefined();
+  });
+
+  it("toggles FAQ item expansion", async () => {
+    vi.spyOn(apiClient, "getAuthUser").mockRejectedValue(new ApiError(401, "Unauthenticated."));
+
+    render(
+      <AuthProvider>
+        <HomePage />
+      </AuthProvider>
+    );
+
+    const faqButton = screen.getByText(/bagaimana cara melaporkan masalah lingkungan di civilens/i);
+    expect(screen.queryByText(/tentukan lokasi pada peta/i)).toBeNull();
+
+    fireEvent.click(faqButton);
+    expect(screen.getByText(/tentukan lokasi pada peta/i)).toBeDefined();
+
+    fireEvent.click(faqButton);
+    expect(screen.queryByText(/tentukan lokasi pada peta/i)).toBeNull();
   });
 
   it("renders user information and logout button when authenticated", async () => {
@@ -72,7 +95,6 @@ describe("HomePage", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/masuk sebagai/i)).toBeDefined();
       expect(screen.getByText("Budi Santoso")).toBeDefined();
       expect(screen.getByRole("button", { name: "Keluar" })).toBeDefined();
     });
@@ -81,3 +103,4 @@ describe("HomePage", () => {
     expect(screen.queryByRole("link", { name: "Masuk" })).toBeNull();
   });
 });
+
