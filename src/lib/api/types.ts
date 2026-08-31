@@ -44,8 +44,28 @@ export interface AuthUser {
   id: number;
   name: string;
   email: string;
+  email_verified_at?: string | null;
   role: "user" | "citizen" | "government" | "admin" | string;
   status: "active" | "suspended" | string;
+}
+
+export interface LoginCredentials {
+  email: string;
+  password: string;
+  remember?: boolean;
+}
+
+export interface RegisterData {
+  name: string;
+  email: string;
+  password: string;
+  password_confirmation: string;
+}
+
+export interface RegisterResponseData {
+  user: AuthUser;
+  requires_verification?: boolean;
+  message?: string;
 }
 
 export interface HealthResponse {

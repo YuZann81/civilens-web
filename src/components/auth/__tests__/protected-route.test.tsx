@@ -24,6 +24,8 @@ describe("ProtectedRoute", () => {
       status: "loading",
       error: null,
       refreshUser: vi.fn(),
+      login: vi.fn(),
+      register: vi.fn(),
       logout: vi.fn(),
       loginWithGoogle: vi.fn(),
     });
@@ -44,6 +46,8 @@ describe("ProtectedRoute", () => {
       status: "unauthenticated",
       error: null,
       refreshUser: vi.fn(),
+      login: vi.fn(),
+      register: vi.fn(),
       logout: vi.fn(),
       loginWithGoogle: vi.fn(),
     });
@@ -71,6 +75,8 @@ describe("ProtectedRoute", () => {
       status: "authenticated",
       error: null,
       refreshUser: vi.fn(),
+      login: vi.fn(),
+      register: vi.fn(),
       logout: vi.fn(),
       loginWithGoogle: vi.fn(),
     });
@@ -96,6 +102,8 @@ describe("ProtectedRoute", () => {
       status: "authenticated",
       error: null,
       refreshUser: vi.fn(),
+      login: vi.fn(),
+      register: vi.fn(),
       logout: vi.fn(),
       loginWithGoogle: vi.fn(),
     });

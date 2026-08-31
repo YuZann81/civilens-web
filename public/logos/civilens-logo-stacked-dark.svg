@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="100%" height="100%">
+  <defs>
+    <style>
+      .title-text {
+        font-family: 'Georgia', serif;
+        font-weight: 600;
+        font-size: 38px;
+        fill: #FAFAF5;
+        letter-spacing: -0.5px;
+      }
+      .subtitle-text {
+        font-family: system-ui, -apple-system, sans-serif;
+        font-weight: 400;
+        font-size: 11px;
+        fill: #8FBF7F;
+        letter-spacing: 3.5px;
+        text-transform: uppercase;
+      }
+    </style>
+  </defs>
+
+  <!-- Group to center all content -->
+  <g transform="translate(0, -10)">
+    <!-- Editable Layer: Icon Background Box -->
+    <rect x="92" y="50" width="72" height="72" rx="20" fill="#D0F0C0" fill-opacity="0.12" stroke="#D0F0C0" stroke-opacity="0.25" stroke-width="1"/>
+    
+    <!-- Editable Layer: Icon Vectors -->
+    <g transform="translate(109, 67)">
+      <!-- Base Shield/Leaf -->
+      <path d="M19 6C19 6 8 10 8 22C8 28.627 13.373 34 20 34C26.627 34 32 28.627 32 22C32 10 19 6 19 6Z" fill="#D0F0C0" fill-opacity="0.9"/>
+      <!-- Outer Outline -->
+      <path d="M19 6C19 6 8 10 8 22" stroke="#8FBF7F" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+      <!-- Inner Stem/Lines -->
+      <path d="M19 34V22M19 22C19 22 14 18 12 14" stroke="#1E4D2B" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+    </g>
+
+    <!-- Editable Layer: Wordmark Title -->
+    <text x="128" y="165" class="title-text" text-anchor="middle">CiviLens</text>
+
+    <!-- Editable Layer: Wordmark Subtitle -->
+    <text x="128" y="188" class="subtitle-text" text-anchor="middle">SUARA WARGA, NYATA</text>
+  </g>
+</svg>

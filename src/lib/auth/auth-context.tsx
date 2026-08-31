@@ -1,8 +1,15 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
-import { AuthUser, ApiError } from "@/lib/api/types";
-import { getAuthUser, initCsrf, logout as apiLogout, getGoogleOAuthUrl } from "@/lib/api/client";
+import { AuthUser, ApiError, LoginCredentials, RegisterData, RegisterResponseData } from "@/lib/api/types";
+import {
+  getAuthUser,
+  initCsrf,
+  logout as apiLogout,
+  login as apiLogin,
+  register as apiRegister,
+  getGoogleOAuthUrl,
+} from "@/lib/api/client";
 
 export type AuthStatus = "loading" | "authenticated" | "unauthenticated" | "error";
 
@@ -11,6 +18,8 @@ export interface AuthContextValue {
   status: AuthStatus;
   error: string | null;
   refreshUser: () => Promise<void>;
+  login: (credentials: LoginCredentials) => Promise<AuthUser>;
+  register: (data: RegisterData) => Promise<RegisterResponseData>;
   logout: () => Promise<void>;
   loginWithGoogle: () => void;
 }
@@ -48,6 +57,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     void refreshUser();
   }, [refreshUser]);
 
+  const login = useCallback(async (credentials: LoginCredentials): Promise<AuthUser> => {
+    try {
+      setError(null);
+      const authUser = await apiLogin(credentials);
+      setUser(authUser);
+      setStatus("authenticated");
+      return authUser;
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError(err instanceof Error ? err.message : "Login failed");
+      }
+      throw err;
+    }
+  }, []);
+
+  const register = useCallback(async (data: RegisterData): Promise<RegisterResponseData> => {
+    try {
+      setError(null);
+      const result = await apiRegister(data);
+      if (result.user) {
+        setUser(result.user);
+        setStatus("authenticated");
+      }
+      return result;
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError(err instanceof Error ? err.message : "Registration failed");
+      }
+      throw err;
+    }
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await initCsrf();
@@ -79,6 +124,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         status,
         error,
         refreshUser,
+        login,
+        register,
         logout,
         loginWithGoogle,
       }}

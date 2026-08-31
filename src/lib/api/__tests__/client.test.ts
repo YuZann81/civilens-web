@@ -1,5 +1,18 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { apiClient, checkApiHealth, getApiBaseUrl, getApiRootUrl, getAuthUser, getGoogleOAuthUrl, initCsrf, logout } from "../client";
+import {
+  apiClient,
+  checkApiHealth,
+  forgotPassword,
+  getApiBaseUrl,
+  getApiRootUrl,
+  getAuthUser,
+  getGoogleOAuthUrl,
+  initCsrf,
+  login,
+  logout,
+  register,
+  resendVerificationEmail,
+} from "../client";
 import { ApiError } from "../types";
 
 describe("API Client Foundation", () => {
@@ -79,7 +92,7 @@ describe("API Client Foundation", () => {
     );
   });
 
-  it("initializes CSRF cookie against root sanctum route", async () => {
+  it("initializes CSRF cookie against sanctum route", async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       status: 204,
@@ -90,12 +103,118 @@ describe("API Client Foundation", () => {
 
     await initCsrf();
     expect(global.fetch).toHaveBeenCalledWith(
-      "http://localhost:8000/sanctum/csrf-cookie",
+      "http://localhost:8000/api/cv/v1/sanctum/csrf-cookie",
       expect.objectContaining({
         method: "GET",
         credentials: "include",
       })
     );
+  });
+
+  it("executes login request and retrieves auth user", async () => {
+    const mockUser = {
+      id: 1,
+      name: "Budi Santoso",
+      email: "budi@example.com",
+      role: "citizen",
+      status: "active",
+    };
+
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 204,
+        headers: { get: () => null },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: { get: () => "application/json" },
+        json: async () => ({ data: mockUser }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: { get: () => "application/json" },
+        json: async () => ({ data: mockUser }),
+      });
+
+    const user = await login({ email: "budi@example.com", password: "password123" });
+    expect(user).toEqual(mockUser);
+  });
+
+  it("executes register request", async () => {
+    const mockUser = {
+      id: 2,
+      name: "Siti Rahma",
+      email: "siti@example.com",
+      role: "citizen",
+      status: "active",
+    };
+
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 204,
+        headers: { get: () => null },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 201,
+        headers: { get: () => "application/json" },
+        json: async () => ({
+          data: { user: mockUser, requires_verification: true },
+          message: "Account created.",
+        }),
+      });
+
+    const result = await register({
+      name: "Siti Rahma",
+      email: "siti@example.com",
+      password: "password123",
+      password_confirmation: "password123",
+    });
+
+    expect(result.user).toEqual(mockUser);
+    expect(result.requires_verification).toBe(true);
+  });
+
+  it("executes forgot password request", async () => {
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 204,
+        headers: { get: () => null },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: { get: () => "application/json" },
+        json: async () => ({ data: null, message: "Reset link sent." }),
+      });
+
+    await expect(forgotPassword("budi@example.com")).resolves.toBeUndefined();
+  });
+
+  it("executes resend verification email request", async () => {
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 204,
+        headers: { get: () => null },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: { get: () => "application/json" },
+        json: async () => ({ data: null, message: "Verification email resent." }),
+      });
+
+    await expect(resendVerificationEmail()).resolves.toBeUndefined();
   });
 
   it("fetches authenticated user profile via getAuthUser", async () => {

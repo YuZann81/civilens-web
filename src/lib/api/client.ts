@@ -1,4 +1,13 @@
-import { ApiError, ApiResponse, ApiSuccessEnvelope, AuthUser, HealthResponse } from "./types";
+import {
+  ApiError,
+  ApiResponse,
+  ApiSuccessEnvelope,
+  AuthUser,
+  HealthResponse,
+  LoginCredentials,
+  RegisterData,
+  RegisterResponseData,
+} from "./types";
 
 export function getApiBaseUrl(): string {
   const envUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
@@ -26,6 +35,12 @@ export interface RequestOptions extends Omit<RequestInit, "headers"> {
   params?: Record<string, string | number | boolean | undefined | null>;
 }
 
+function getXsrfToken(): string | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(/(^|;\s*)XSRF-TOKEN=([^;]*)/);
+  return match ? decodeURIComponent(match[2]) : null;
+}
+
 export async function apiClient<T>(
   endpoint: string,
   options: RequestOptions = {}
@@ -43,9 +58,13 @@ export async function apiClient<T>(
     });
   }
 
+  const xsrf = getXsrfToken();
   const defaultHeaders: Record<string, string> = {
     Accept: "application/json",
     ...(options.body ? { "Content-Type": "application/json" } : {}),
+    ...(xsrf && options.method && ["POST", "PUT", "PATCH", "DELETE"].includes(options.method.toUpperCase())
+      ? { "X-XSRF-TOKEN": xsrf }
+      : {}),
   };
 
   const headers = {
@@ -101,6 +120,48 @@ export async function initCsrf(): Promise<void> {
   }
 }
 
+export async function login(credentials: LoginCredentials): Promise<AuthUser> {
+  await initCsrf();
+  await apiClient<ApiSuccessEnvelope<AuthUser | null>>("/auth/login", {
+    method: "POST",
+    body: JSON.stringify(credentials),
+  });
+  return await getAuthUser();
+}
+
+export async function register(data: RegisterData): Promise<RegisterResponseData> {
+  await initCsrf();
+  const response = await apiClient<ApiSuccessEnvelope<RegisterResponseData | AuthUser>>("/auth/register", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+  const rawData = response.data.data;
+  if ("user" in rawData && rawData.user) {
+    return rawData as RegisterResponseData;
+  }
+  return {
+    user: rawData as AuthUser,
+    requires_verification: false,
+    message: response.data.message,
+  };
+}
+
+export async function forgotPassword(email: string): Promise<void> {
+  await initCsrf();
+  await apiClient<ApiSuccessEnvelope<null>>("/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function resendVerificationEmail(): Promise<void> {
+  await initCsrf();
+  await apiClient<ApiSuccessEnvelope<null>>("/auth/email/resend", {
+    method: "POST",
+  });
+}
+
 export async function getAuthUser(): Promise<AuthUser> {
   const result = await apiClient<ApiSuccessEnvelope<AuthUser>>("/auth/me", {
     method: "GET",
@@ -110,6 +171,7 @@ export async function getAuthUser(): Promise<AuthUser> {
 }
 
 export async function logout(): Promise<void> {
+  await initCsrf();
   await apiClient<ApiSuccessEnvelope<null>>("/auth/logout", {
     method: "POST",
   });

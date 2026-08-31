@@ -6,12 +6,27 @@ import { ApiError } from "@/lib/api/types";
 import * as apiClient from "@/lib/api/client";
 
 function TestConsumer() {
-  const { user, status, error, logout, loginWithGoogle } = useAuth();
+  const { user, status, error, login, register, logout, loginWithGoogle } = useAuth();
   return (
     <div>
       <div data-testid="status">{status}</div>
       <div data-testid="user">{user ? user.name : "none"}</div>
       <div data-testid="error">{error ?? "no-error"}</div>
+      <button onClick={() => void login({ email: "test@example.com", password: "password123" })}>
+        Login
+      </button>
+      <button
+        onClick={() =>
+          void register({
+            name: "New Citizen",
+            email: "new@example.com",
+            password: "password123",
+            password_confirmation: "password123",
+          })
+        }
+      >
+        Register
+      </button>
       <button onClick={() => void logout()}>Logout</button>
       <button onClick={loginWithGoogle}>Login Google</button>
     </div>
@@ -66,6 +81,76 @@ describe("AuthProvider & useAuth", () => {
 
     expect(screen.getByTestId("user").textContent).toBe("none");
     expect(screen.getByTestId("error").textContent).toBe("no-error");
+  });
+
+  it("handles login action successfully and updates user state", async () => {
+    vi.spyOn(apiClient, "getAuthUser").mockRejectedValue(new ApiError(401, "Unauthenticated."));
+
+    const mockUser = {
+      id: 2,
+      name: "Budi Santoso",
+      email: "budi@example.com",
+      role: "citizen",
+      status: "active",
+    };
+
+    const loginSpy = vi.spyOn(apiClient, "login").mockResolvedValue(mockUser);
+
+    render(
+      <AuthProvider>
+        <TestConsumer />
+      </AuthProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("status").textContent).toBe("unauthenticated");
+    });
+
+    await act(async () => {
+      screen.getByText("Login").click();
+    });
+
+    expect(loginSpy).toHaveBeenCalledWith({
+      email: "test@example.com",
+      password: "password123",
+    });
+    expect(screen.getByTestId("status").textContent).toBe("authenticated");
+    expect(screen.getByTestId("user").textContent).toBe("Budi Santoso");
+  });
+
+  it("handles register action successfully", async () => {
+    vi.spyOn(apiClient, "getAuthUser").mockRejectedValue(new ApiError(401, "Unauthenticated."));
+
+    const mockUser = {
+      id: 3,
+      name: "New Citizen",
+      email: "new@example.com",
+      role: "citizen",
+      status: "active",
+    };
+
+    const registerSpy = vi.spyOn(apiClient, "register").mockResolvedValue({
+      user: mockUser,
+      requires_verification: true,
+    });
+
+    render(
+      <AuthProvider>
+        <TestConsumer />
+      </AuthProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("status").textContent).toBe("unauthenticated");
+    });
+
+    await act(async () => {
+      screen.getByText("Register").click();
+    });
+
+    expect(registerSpy).toHaveBeenCalled();
+    expect(screen.getByTestId("status").textContent).toBe("authenticated");
+    expect(screen.getByTestId("user").textContent).toBe("New Citizen");
   });
 
   it("handles server error 500 distinctly from unauthenticated", async () => {
