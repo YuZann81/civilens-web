@@ -502,10 +502,10 @@ function ReportsFeedContent() {
         </div>
       </header>
 
-      {/* Main Layout */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-5 grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* LEFT COLUMN: Sidebar Navigation */}
-        <aside className="hidden lg:block lg:col-span-3 space-y-4">
+      {/* Main Layout: 3-column proportional grid (1280-1360px max-width) */}
+      <div className="mx-auto max-w-[1360px] px-4 sm:px-6 py-5 flex flex-col lg:flex-row gap-6 items-start">
+        {/* LEFT COLUMN: Sidebar Navigation (~240px) */}
+        <aside className="hidden lg:block w-[240px] shrink-0 space-y-4">
           <div className="sticky top-20 rounded-2xl border border-[#eae2d3] bg-white p-4 shadow-xs space-y-3">
             <nav className="space-y-1 text-xs font-semibold" aria-label="Navigasi Samping">
               <Link
@@ -516,15 +516,15 @@ function ReportsFeedContent() {
                     : "text-[#57524d] hover:bg-[#fafaf5]"
                 }`}
               >
-                <IconDocument className="h-4 w-4" />
+                <IconDocument className="h-4 w-4 shrink-0" />
                 <span>Feed Utama</span>
               </Link>
               <Link
                 href="/reports/create"
                 className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[#57524d] hover:bg-[#fafaf5] transition-colors"
               >
-                <IconCamera className="h-4 w-4" />
-                <span>Buat Laporan Baru</span>
+                <IconCamera className="h-4 w-4 shrink-0" />
+                <span>Buat Laporan</span>
               </Link>
               {user && (
                 <>
@@ -532,21 +532,21 @@ function ReportsFeedContent() {
                     href="/bookmarks"
                     className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[#57524d] hover:bg-[#fafaf5] transition-colors"
                   >
-                    <IconBookmark className="h-4 w-4" />
+                    <IconBookmark className="h-4 w-4 shrink-0" />
                     <span>Laporan Tersimpan</span>
                   </Link>
                   <Link
                     href="/notifications"
                     className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[#57524d] hover:bg-[#fafaf5] transition-colors"
                   >
-                    <IconBell className="h-4 w-4" />
+                    <IconBell className="h-4 w-4 shrink-0" />
                     <span>Pusat Notifikasi</span>
                   </Link>
                   <Link
                     href={`/users/${user.id}`}
                     className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[#57524d] hover:bg-[#fafaf5] transition-colors"
                   >
-                    <IconUser className="h-4 w-4" />
+                    <IconUser className="h-4 w-4 shrink-0" />
                     <span>Profil Publik</span>
                   </Link>
                   {(user.role === "government" || user.role === "admin") && (
@@ -554,18 +554,27 @@ function ReportsFeedContent() {
                       href="/government"
                       className="flex items-center gap-2 rounded-xl bg-[#1e4d2b] px-3 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#163a20] transition-colors mt-2"
                     >
-                      <IconShield className="h-3.5 w-3.5" />
+                      <IconShield className="h-3.5 w-3.5 shrink-0" />
                       <span>Portal Instansi</span>
                     </Link>
                   )}
                 </>
               )}
             </nav>
+
+            <div className="pt-2 border-t border-[#f2ede4]">
+              <Link
+                href="/reports/create"
+                className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-[#1e4d2b] py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-[#163a20] transition-colors"
+              >
+                <span>+ Buat Laporan</span>
+              </Link>
+            </div>
           </div>
         </aside>
 
-        {/* CENTER COLUMN: Main Report Stream */}
-        <main className="lg:col-span-6 space-y-4">
+        {/* CENTER COLUMN: Main Report Stream (~680-720px) */}
+        <main className="w-full lg:max-w-[720px] flex-1 space-y-4">
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold font-serif text-[#1e4d2b]" style={{ fontFamily: "Georgia, serif" }}>
               Feed Laporan Lingkungan
@@ -705,47 +714,70 @@ function ReportsFeedContent() {
               <p className="text-xs text-[#57524d]">Memuat laporan warga...</p>
             </div>
           ) : reports.length === 0 ? (
-            <div className="rounded-2xl border border-[#eae2d3] bg-white p-8 sm:p-10 text-center space-y-4 shadow-xs">
-              <p className="text-base font-bold text-[#1c4123]" style={{ fontFamily: "Georgia, serif" }}>
-                Belum ada laporan yang cocok
-              </p>
-              {debouncedQuery && (
-                <p className="text-xs text-[#57524d] max-w-sm mx-auto">
-                  Tidak ditemukan laporan dengan kata kunci &ldquo;<strong className="text-[#1c4123]">{debouncedQuery}</strong>&rdquo;.
-                </p>
-              )}
-
-              <div className="rounded-xl bg-[#fafaf5] border border-[#cbe0ce] p-4 text-left space-y-3 max-w-md mx-auto">
-                <p className="text-xs font-bold text-[#1e4d2b]">Mulai Laporkan Isu Tersebut</p>
-                <p className="text-xs text-[#57524d] leading-relaxed">
-                  Jadilah yang pertama mendokumentasikan permasalahan lingkungan ini agar dapat dipantau dan ditindaklanjuti.
-                </p>
-
-                {trendingTopics.length > 0 && (
-                  <div className="space-y-1 pt-1">
-                    <p className="text-[11px] font-semibold text-[#7a9a80]">Topik Terkait:</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {trendingTopics.slice(0, 3).map((tt) => (
-                        <button
-                          key={tt.id}
-                          type="button"
-                          onClick={() => setSelectedTopic(tt.slug)}
-                          className="rounded-md border border-[#c8dfc8] bg-white px-2 py-0.5 text-[10px] font-semibold text-[#1e4d2b] hover:bg-[#e5f0e6]"
-                        >
-                          #{tt.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+            <div className="space-y-4">
+              {/* Compact Content-Driven Empty State Card */}
+              <div className="rounded-2xl border border-[#eae2d3] bg-white p-6 sm:p-7 text-center space-y-3 shadow-xs">
+                <h2 className="text-base font-bold text-[#1c4123]" style={{ fontFamily: "Georgia, serif" }}>
+                  Belum ada laporan yang cocok
+                </h2>
+                {debouncedQuery ? (
+                  <p className="text-xs text-[#57524d] max-w-sm mx-auto">
+                    Tidak ditemukan laporan yang sesuai dengan kata kunci &ldquo;<strong className="text-[#1c4123]">{debouncedQuery}</strong>&rdquo;.
+                  </p>
+                ) : (
+                  <p className="text-xs text-[#57524d] max-w-sm mx-auto">
+                    Belum ada laporan dengan filter yang dipilih saat ini.
+                  </p>
                 )}
-
-                <div className="pt-2">
+                <div>
                   <Link
                     href="/reports/create"
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#1e4d2b] px-4 py-2 text-xs font-semibold text-white hover:bg-[#163a20] transition-colors shadow-xs"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-[#1e4d2b] px-4 py-2 text-xs font-semibold text-white hover:bg-[#163a20] transition-colors shadow-xs"
                   >
-                    <span>+ Buat Laporan Sekarang</span>
+                    <span>+ Buat Laporan Baru</span>
                   </Link>
+                </div>
+              </div>
+
+              {/* Discovery Section: Topics to Monitor */}
+              {topics.length > 0 && (
+                <div className="rounded-2xl border border-[#eae2d3] bg-white p-5 shadow-xs space-y-3">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-[#1e4d2b]">
+                    Topik yang Bisa Kamu Pantau
+                  </h3>
+                  <div className="flex flex-wrap gap-1.5">
+                    {topics.slice(0, 10).map((top) => (
+                      <button
+                        key={top.id}
+                        type="button"
+                        onClick={() => setSelectedTopic(top.slug)}
+                        className="rounded-full border border-[#d6e4d4] bg-[#fafaf5] px-2.5 py-1 text-xs font-medium text-[#1e4d2b] hover:bg-[#e5f0e6] transition-colors"
+                      >
+                        #{top.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Information Section: Cara Kerja CiviLens */}
+              <div className="rounded-2xl border border-[#eae2d3] bg-white p-5 shadow-xs space-y-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#1e4d2b]">
+                  Cara Kerja CiviLens
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-[#57524d]">
+                  <div className="p-3 rounded-xl bg-[#fafaf5] border border-[#f2ede4] space-y-1">
+                    <p className="font-bold text-[#1c4123]">1. Laporkan Masalah</p>
+                    <p className="leading-relaxed text-[11px]">Unggah foto bukti otentik dan tentukan lokasi kejadian.</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-[#fafaf5] border border-[#f2ede4] space-y-1">
+                    <p className="font-bold text-[#1c4123]">2. CiviLens Menganalisis</p>
+                    <p className="leading-relaxed text-[11px]">Sistem cerdas merangkum fakta dan tingkat keparahan masalah.</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-[#fafaf5] border border-[#f2ede4] space-y-1">
+                    <p className="font-bold text-[#1c4123]">3. Ditindaklanjuti</p>
+                    <p className="leading-relaxed text-[11px]">Instansi memverifikasi dan memperbarui progres di linimasa.</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -763,29 +795,30 @@ function ReportsFeedContent() {
           )}
         </main>
 
-        {/* RIGHT COLUMN: Discovery / Topic Aggregation */}
-        <aside className="hidden lg:block lg:col-span-3 space-y-4">
-          <div className="sticky top-20 rounded-2xl border border-[#eae2d3] bg-white p-5 shadow-xs space-y-4">
+        {/* RIGHT COLUMN: Discovery / Topic Aggregation (~300px) */}
+        <aside className="hidden lg:block w-[300px] shrink-0 space-y-4">
+          {/* Widget 1: Topik Paling Banyak Dilaporkan */}
+          <div className="rounded-2xl border border-[#eae2d3] bg-white p-4 shadow-xs space-y-3">
             <div>
               <h2 className="text-sm font-bold text-[#1e4d2b] flex items-center gap-1.5" style={{ fontFamily: "Georgia, serif" }}>
                 <IconHashtag className="h-4 w-4 text-[#7a4400]" />
                 <span>Topik Paling Banyak Dilaporkan</span>
               </h2>
               <p className="text-[11px] text-[#7a9a80] mt-0.5">
-                Akumulasi jumlah laporan warga CiviLens pada topik aktif.
+                Akumulasi laporan warga pada topik aktif.
               </p>
             </div>
 
             {trendingTopics.length === 0 ? (
-              <p className="text-xs text-[#8c857e] italic py-2">Belum ada topik aktif.</p>
+              <p className="text-xs text-[#8c857e] italic py-1">Belum ada topik aktif.</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {trendingTopics.map((item) => (
                   <button
                     key={item.id}
                     type="button"
                     onClick={() => setSelectedTopic(item.slug === selectedTopic ? "" : item.slug)}
-                    className={`w-full text-left p-2.5 rounded-xl border transition-colors ${
+                    className={`w-full text-left px-3 py-2 rounded-xl border transition-colors ${
                       selectedTopic === item.slug
                         ? "bg-[#e5f0e6] border-[#1e4d2b] text-[#1e4d2b]"
                         : "bg-[#fafaf5] border-[#eae2d3] hover:border-[#c8dfc8] text-[#2c2926]"
@@ -803,10 +836,29 @@ function ReportsFeedContent() {
                 ))}
               </div>
             )}
+          </div>
 
-            <div className="pt-3 border-t border-[#f0f4ee] text-[11px] text-[#8c857e] leading-relaxed">
-              CiviLens menjembatani transparansi warga dan tindak lanjut penanganan instansi pemerintah.
+          {/* Widget 2: Panduan Partisipasi Sipil */}
+          <div className="rounded-2xl border border-[#eae2d3] bg-white p-4 shadow-xs space-y-2 text-xs">
+            <h3 className="font-bold text-[#1e4d2b] flex items-center gap-1.5">
+              <IconShield className="h-3.5 w-3.5 text-[#1e4d2b]" />
+              <span>Transparansi Penanganan</span>
+            </h3>
+            <p className="text-[11px] text-[#57524d] leading-relaxed">
+              Setiap laporan yang masuk diteruskan ke instansi penanggung jawab dan dapat dipantau bersama linimasa statusnya oleh publik.
+            </p>
+          </div>
+
+          {/* Widget 3: Quick Links / Footer */}
+          <div className="px-2 text-[11px] text-[#8c857e] space-y-1">
+            <div className="flex flex-wrap gap-x-2 gap-y-1">
+              <Link href="/reports" className="hover:underline">Feed</Link>
+              <span>&bull;</span>
+              <Link href="/reports/create" className="hover:underline">Buat Laporan</Link>
+              <span>&bull;</span>
+              <Link href="/bookmarks" className="hover:underline">Tersimpan</Link>
             </div>
+            <p>&copy; {new Date().getFullYear()} CiviLens Indonesia</p>
           </div>
         </aside>
       </div>
