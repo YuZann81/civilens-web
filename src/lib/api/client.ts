@@ -246,6 +246,14 @@ export async function getTopics(params?: { q?: string; limit?: number }): Promis
   return response.data.data;
 }
 
+export async function getTrendingTopics(limit = 5): Promise<Topic[]> {
+  const response = await apiClient<ApiSuccessEnvelope<Topic[]>>(`/topics/trending?limit=${limit}`, {
+    method: "GET",
+    cache: "no-store",
+  });
+  return response.data.data;
+}
+
 export async function getCategories(): Promise<Category[]> {
   const response = await apiClient<ApiSuccessEnvelope<Category[]>>("/categories", {
     method: "GET",

@@ -113,7 +113,7 @@ function RightPanel() {
         setError("Akun Anda sedang ditangguhkan. Silakan hubungi administrator.");
         return;
       }
-      router.push("/");
+      router.push("/reports");
     } catch (err: unknown) {
       if (err instanceof Error) {
         if ("status" in err && err.status === 404) {
