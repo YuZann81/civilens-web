@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -79,13 +79,20 @@ function LeftPanel() {
 
 function RightPanel() {
   const router = useRouter();
-  const { register, loginWithGoogle } = useAuth();
+  const { user: authUser, status: authStatus, register, loginWithGoogle } = useAuth();
   const googleAuthUrl = getGoogleOAuthUrl();
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // If already authenticated, redirect to /reports
+  useEffect(() => {
+    if (authStatus === "authenticated" && authUser) {
+      router.replace("/reports");
+    }
+  }, [authStatus, authUser, router]);
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -131,13 +138,15 @@ function RightPanel() {
       if (response.requires_verification || !response.user.email_verified_at) {
         router.push("/verify-email");
       } else {
-        router.push("/");
+        router.push("/reports");
       }
     } catch (err: unknown) {
       if (err instanceof Error) {
-        if ("status" in err && err.status === 404) {
+        if ("status" in err && (err as { status?: number }).status === 404) {
           setError("Pendaftaran email manual sedang dalam persiapan backend. Silakan gunakan Daftar dengan Google.");
-        } else if ("status" in err && err.status === 422) {
+        } else if ("status" in err && (err as { status?: number }).status === 422) {
+          setError("Data pendaftaran tidak valid atau email sudah terdaftar.");
+        } else if (err.message && err.message.toLowerCase().includes("email already exists")) {
           setError("Data pendaftaran tidak valid atau email sudah terdaftar.");
         } else {
           setError(err.message || "Terjadi kesalahan saat pendaftaran. Silakan coba lagi.");

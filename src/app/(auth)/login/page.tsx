@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -88,7 +88,7 @@ function LeftPanel() {
 function RightPanel() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login, loginWithGoogle } = useAuth();
+  const { user: authUser, status: authStatus, login, loginWithGoogle } = useAuth();
   const googleAuthUrl = getGoogleOAuthUrl();
 
   const [showPassword, setShowPassword] = useState(false);
@@ -97,6 +97,13 @@ function RightPanel() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // If already authenticated, redirect to /reports
+  useEffect(() => {
+    if (authStatus === "authenticated" && authUser) {
+      router.replace("/reports");
+    }
+  }, [authStatus, authUser, router]);
 
   const isResetSuccess = searchParams?.get("reset") === "success";
 
@@ -116,11 +123,12 @@ function RightPanel() {
       router.push("/reports");
     } catch (err: unknown) {
       if (err instanceof Error) {
-        if ("status" in err && err.status === 404) {
+        const errorStatus = "status" in err ? (err as { status?: number }).status : undefined;
+        if (errorStatus === 404) {
           setError("Fitur login email sedang dalam persiapan backend. Silakan gunakan Masuk dengan Google.");
-        } else if ("status" in err && err.status === 401) {
+        } else if (errorStatus === 401) {
           setError("Alamat email atau kata sandi yang Anda masukkan salah.");
-        } else if ("status" in err && err.status === 422) {
+        } else if (errorStatus === 422) {
           setError("Data yang dimasukkan tidak valid. Periksa format email dan kata sandi.");
         } else {
           setError(err.message || "Terjadi kesalahan saat masuk. Silakan coba lagi.");

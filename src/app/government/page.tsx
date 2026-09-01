@@ -78,7 +78,7 @@ export default function GovernmentDashboardPage() {
   useEffect(() => {
     if (authStatus === "loading") return;
     if (!user || (user.role !== "government" && user.role !== "admin")) {
-      router.push("/");
+      router.push("/reports");
       return;
     }
 
@@ -137,7 +137,7 @@ export default function GovernmentDashboardPage() {
       <div className="flex min-h-screen flex-col bg-[#fafaf5] text-[#2c2926]">
         <header className="border-b border-[#eae2d3] bg-[#fafaf5]/90 backdrop-blur-xs sticky top-0 z-20">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-            <Link href="/" className="flex items-center gap-2.5 transition-opacity hover:opacity-85">
+            <Link href="/reports" className="flex items-center gap-2.5 transition-opacity hover:opacity-85">
               <div className="h-6 w-6 rounded-full bg-[#1e4d2b] text-white flex items-center justify-center text-xs font-bold font-serif">
                 C
               </div>
@@ -161,7 +161,7 @@ export default function GovernmentDashboardPage() {
       <header className="border-b border-[#eae2d3] bg-[#fafaf5]/90 backdrop-blur-xs sticky top-0 z-20">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2.5 transition-opacity hover:opacity-85">
+            <Link href="/reports" className="flex items-center gap-2.5 transition-opacity hover:opacity-85">
               <div className="h-6 w-6 rounded-full bg-[#1e4d2b] text-white flex items-center justify-center text-xs font-bold font-serif">
                 C
               </div>
@@ -186,6 +186,16 @@ export default function GovernmentDashboardPage() {
 
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-6 py-8">
         <div className="space-y-6">
+          <div className="flex items-center gap-2 text-xs text-[#7a9a80]">
+            <Link href="/reports" className="hover:text-[#1c4123] transition flex items-center gap-1 font-medium text-[#1e4d2b]">
+              <span>&larr; Kembali ke Feed Laporan</span>
+            </Link>
+            <span>/</span>
+            <span className="text-[#1c4123] font-medium">
+              Portal Instansi
+            </span>
+          </div>
+
           {/* Header Title */}
           <div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-[#17361d]" style={{ fontFamily: "Georgia, serif" }}>

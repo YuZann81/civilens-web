@@ -262,7 +262,7 @@ export default function ReportDetailPage() {
       <div className="flex min-h-screen flex-col bg-[#fafaf5] text-[#2c2926]">
         <header className="border-b border-[#eae2d3] bg-[#fafaf5]/90 backdrop-blur-xs sticky top-0 z-20">
           <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-            <Link href="/" className="flex items-center gap-2.5 transition-opacity hover:opacity-85">
+            <Link href="/reports" className="flex items-center gap-2.5 transition-opacity hover:opacity-85">
               <div className="h-6 w-6 rounded-full bg-[#1e4d2b] text-white flex items-center justify-center text-xs font-bold font-serif">
                 C
               </div>
@@ -315,7 +315,7 @@ export default function ReportDetailPage() {
       {/* Top Header */}
       <header className="border-b border-[#eae2d3] bg-[#fafaf5]/90 backdrop-blur-xs sticky top-0 z-20">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <Link href="/" className="flex items-center gap-2.5 transition-opacity hover:opacity-85">
+          <Link href="/reports" className="flex items-center gap-2.5 transition-opacity hover:opacity-85">
             <div className="h-6 w-6 rounded-full bg-[#1e4d2b] text-white flex items-center justify-center text-xs font-bold font-serif">
               C
             </div>
@@ -371,12 +371,8 @@ export default function ReportDetailPage() {
 
           {/* Breadcrumb Navigation */}
           <div className="flex items-center gap-2 text-xs text-[#7a9a80]">
-            <Link href="/" className="hover:text-[#1c4123] transition">
-              Beranda
-            </Link>
-            <span>/</span>
-            <Link href="/reports" className="hover:text-[#1c4123] transition">
-              Laporan Warga
+            <Link href="/reports" className="hover:text-[#1c4123] transition flex items-center gap-1 font-medium text-[#1e4d2b]">
+              <span>&larr; Kembali ke Feed Laporan</span>
             </Link>
             <span>/</span>
             <span className="text-[#1c4123] font-medium truncate max-w-[200px]">

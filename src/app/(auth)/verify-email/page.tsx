@@ -115,7 +115,7 @@ function RightPanel() {
     try {
       await refreshUser();
       if (user?.email_verified_at) {
-        router.push("/");
+        router.push("/reports");
       } else {
         setMessage("Email belum terverifikasi. Periksa kotak masuk atau folder spam Anda.");
       }

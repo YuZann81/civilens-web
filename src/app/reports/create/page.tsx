@@ -263,10 +263,10 @@ export default function CreateReportPage() {
               Masuk dengan Google
             </button>
             <Link
-              href="/"
+              href="/reports"
               className="mt-2 text-xs font-medium text-[#7a9a80] hover:text-[#1e4d2b] transition"
             >
-              &larr; Kembali ke Beranda
+              &larr; Kembali ke Feed Laporan
             </Link>
           </div>
         </div>
@@ -287,7 +287,7 @@ export default function CreateReportPage() {
       {/* Top Header */}
       <header className="border-b border-[#eae2d3] bg-[#fafaf5]/90 backdrop-blur-xs sticky top-0 z-20">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
-          <Link href="/" className="flex items-center gap-2.5 transition-opacity hover:opacity-85">
+          <Link href="/reports" className="flex items-center gap-2.5 transition-opacity hover:opacity-85">
             <div className="h-6 w-6 rounded-full bg-[#1e4d2b] text-white flex items-center justify-center text-xs font-bold font-serif">
               C
             </div>
@@ -309,11 +309,11 @@ export default function CreateReportPage() {
       <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-6 py-8">
         <div className="mb-6">
           <Link
-            href="/"
+            href="/reports"
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#4a6b52] hover:text-[#1e4d2b] transition mb-3"
           >
             <IconArrowLeft className="h-3.5 w-3.5" />
-            <span>Kembali ke Beranda</span>
+            <span>Kembali ke Feed Laporan</span>
           </Link>
           <h1
             className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#17361d]"
