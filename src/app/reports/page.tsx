@@ -22,6 +22,7 @@ import {
   IconCamera,
   IconDocument,
 } from "@/components/ui/icons";
+import { FeedReportSkeleton, TrendingWidgetSkeleton } from "@/components/ui/skeletons";
 
 function getStatusBadge(status: string) {
   switch (status) {
@@ -709,9 +710,10 @@ function ReportsFeedContent() {
 
           {/* Report Stream */}
           {loading ? (
-            <div className="text-center py-16 space-y-2">
-              <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#1e4d2b] border-t-transparent mx-auto" />
-              <p className="text-xs text-[#57524d]">Memuat laporan warga...</p>
+            <div className="space-y-4" aria-busy="true" aria-label="Memuat daftar laporan...">
+              <FeedReportSkeleton />
+              <FeedReportSkeleton />
+              <FeedReportSkeleton />
             </div>
           ) : reports.length === 0 ? (
             <div className="space-y-4">
@@ -810,7 +812,7 @@ function ReportsFeedContent() {
             </div>
 
             {trendingTopics.length === 0 ? (
-              <p className="text-xs text-[#8c857e] italic py-1">Belum ada topik aktif.</p>
+              <TrendingWidgetSkeleton />
             ) : (
               <div className="space-y-1.5">
                 {trendingTopics.map((item) => (
@@ -906,10 +908,18 @@ export default function ReportsFeedPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-[#fafaf5]">
-          <div className="text-center space-y-2">
-            <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#1e4d2b] border-t-transparent mx-auto" />
-            <p className="text-xs text-[#57524d]">Memuat feed laporan...</p>
+        <div className="min-h-screen bg-[#fafaf5] text-[#2c2926]">
+          <div className="mx-auto max-w-[1360px] px-4 sm:px-6 py-5 flex gap-6 items-start">
+            <div className="hidden lg:block w-[240px] space-y-4">
+              <TrendingWidgetSkeleton />
+            </div>
+            <div className="flex-1 lg:max-w-[720px] space-y-4">
+              <FeedReportSkeleton />
+              <FeedReportSkeleton />
+            </div>
+            <div className="hidden lg:block w-[300px]">
+              <TrendingWidgetSkeleton />
+            </div>
           </div>
         </div>
       }

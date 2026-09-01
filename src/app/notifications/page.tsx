@@ -9,6 +9,7 @@ import {
 } from "@/lib/api/client";
 import { InAppNotification } from "@/lib/api/types";
 import { IconBell, IconCheck } from "@/components/ui/icons";
+import { NotificationSkeleton } from "@/components/ui/skeletons";
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<InAppNotification[]>([]);
@@ -98,7 +99,11 @@ export default function NotificationsPage() {
           </div>
 
           {loading ? (
-            <div className="text-center py-16 text-xs text-[#7a9a80]">Memuat notifikasi...</div>
+            <div className="space-y-3" aria-busy="true" aria-label="Memuat notifikasi...">
+              <NotificationSkeleton />
+              <NotificationSkeleton />
+              <NotificationSkeleton />
+            </div>
           ) : notifications.length === 0 ? (
             <div className="rounded-2xl border border-[#eae2d3] bg-white p-12 text-center space-y-3 shadow-xs">
               <p className="text-base font-semibold text-[#1c4123]">Tidak Ada Notifikasi</p>

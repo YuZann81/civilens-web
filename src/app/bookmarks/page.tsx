@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getBookmarks } from "@/lib/api/client";
 import { Report } from "@/lib/api/types";
 import { IconBookmark, IconPin } from "@/components/ui/icons";
+import { FeedReportSkeleton } from "@/components/ui/skeletons";
 
 export default function BookmarksPage() {
   const [reports, setReports] = useState<Report[]>([]);
@@ -58,7 +59,11 @@ export default function BookmarksPage() {
           </div>
 
           {loading ? (
-            <div className="text-center py-16 text-xs text-[#7a9a80]">Memuat bookmark...</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" aria-busy="true" aria-label="Memuat laporan tersimpan...">
+              <FeedReportSkeleton />
+              <FeedReportSkeleton />
+              <FeedReportSkeleton />
+            </div>
           ) : reports.length === 0 ? (
             <div className="rounded-2xl border border-[#eae2d3] bg-white p-12 text-center space-y-3 shadow-xs">
               <p className="text-base font-semibold text-[#1c4123]">Belum Ada Laporan Tersimpan</p>

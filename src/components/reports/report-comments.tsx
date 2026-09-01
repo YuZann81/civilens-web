@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth/auth-context";
 import { getReportComments, postReportComment, deleteReportComment } from "@/lib/api/client";
 import { ReportComment } from "@/lib/api/types";
 import { IconMessage, IconClose, IconShield } from "@/components/ui/icons";
+import { CommentSkeleton } from "@/components/ui/skeletons";
 
 interface ReportCommentsProps {
   reportId: number | string;
@@ -145,7 +146,10 @@ export default function ReportComments({ reportId, initialCommentsCount = 0 }: R
 
       {/* Comments List */}
       {loading ? (
-        <div className="text-center py-6 text-xs text-[#7a9a80]">Memuat diskusi...</div>
+        <div className="space-y-3 pt-2" aria-busy="true" aria-label="Memuat tanggapan...">
+          <CommentSkeleton />
+          <CommentSkeleton />
+        </div>
       ) : comments.length === 0 ? (
         <div className="text-center py-6 text-xs text-[#8c857e]">
           Belum ada komentar. Jadilah yang pertama memberikan tanggapan atau konfirmasi kondisi di lapangan!

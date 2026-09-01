@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { getUserProfile } from "@/lib/api/client";
 import { UserProfile } from "@/lib/api/types";
 import { IconPin } from "@/components/ui/icons";
+import { UserProfileSkeleton } from "@/components/ui/skeletons";
 
 export default function UserProfilePage() {
   const params = useParams();
@@ -37,11 +38,23 @@ export default function UserProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#fafaf5]">
-        <div className="text-center space-y-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#1e4d2b] border-t-transparent mx-auto" />
-          <p className="text-xs text-[#57524d]">Memuat profil pengguna...</p>
-        </div>
+      <div className="flex min-h-screen flex-col bg-[#fafaf5] text-[#2c2926]">
+        <header className="border-b border-[#eae2d3] bg-[#fafaf5]/90 backdrop-blur-xs sticky top-0 z-20">
+          <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
+            <Link href="/" className="flex items-center gap-2.5 transition-opacity hover:opacity-85">
+              <div className="h-6 w-6 rounded-full bg-[#1e4d2b] text-white flex items-center justify-center text-xs font-bold font-serif">
+                C
+              </div>
+              <span className="text-lg font-bold tracking-tight text-[#1c4123]" style={{ fontFamily: "Georgia, serif" }}>
+                CiviLens
+              </span>
+            </Link>
+          </div>
+        </header>
+
+        <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-6 py-8">
+          <UserProfileSkeleton />
+        </main>
       </div>
     );
   }
