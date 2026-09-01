@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import AuthWaveLayout from "@/components/ui/AuthWaveLayout";
 import { useAuth } from "@/lib/auth/auth-context";
 import { resendVerificationEmail } from "@/lib/api/client";
@@ -71,7 +71,12 @@ function LeftPanel() {
 
 function RightPanel() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, refreshUser, logout } = useAuth();
+
+  const statusParam = searchParams?.get("status");
+  const errorParam = searchParams?.get("error");
+
   const [cooldown, setCooldown] = useState(0);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -97,12 +102,8 @@ function RightPanel() {
       await resendVerificationEmail();
       setMessage("Tautan verifikasi baru telah dikirim ke email Anda.");
       setCooldown(60);
-    } catch (err: unknown) {
-      if (err instanceof Error && "status" in err && err.status === 404) {
-        setError("Layanan verifikasi email sedang dalam persiapan backend.");
-      } else {
-        setError("Gagal mengirim ulang email verifikasi. Coba beberapa saat lagi.");
-      }
+    } catch {
+      setError("Gagal mengirim ulang email verifikasi. Coba beberapa saat lagi.");
     } finally {
       setIsResending(false);
     }
@@ -125,6 +126,100 @@ function RightPanel() {
     }
   };
 
+  // State 1: Verification Success
+  if (statusParam === "success") {
+    return (
+      <div className="flex flex-col items-center w-full text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#d0f0c0] text-[#1e4d2b] mb-6 shadow-md">
+          <svg className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </div>
+
+        <h1
+          className="text-2xl sm:text-3xl font-bold leading-snug mb-2 font-serif text-[#fafaf5]"
+          style={{ fontFamily: "Georgia, serif" }}
+        >
+          Akun Berhasil Diverifikasi
+        </h1>
+        <p className="text-sm mb-8 text-[#d0f0c0] max-w-sm leading-relaxed">
+          Alamat email Anda telah terverifikasi dengan aman. Akun CiviLens Anda kini siap digunakan untuk membuat laporan dan berpartisipasi.
+        </p>
+
+        <Link
+          href="/login"
+          className="w-full py-3.5 rounded-xl font-bold text-sm text-center transition-all text-[#1e4d2b] bg-[#d0f0c0] hover:bg-[#bce6aa] shadow-md active:scale-95"
+        >
+          Masuk ke CiviLens
+        </Link>
+      </div>
+    );
+  }
+
+  // State 2: Already Verified
+  if (statusParam === "already") {
+    return (
+      <div className="flex flex-col items-center w-full text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#e5f0e6] text-[#1e4d2b] mb-6 shadow-md">
+          <svg className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+            <polyline points="22 4 12 14.01 9 11.01" />
+          </svg>
+        </div>
+
+        <h1
+          className="text-2xl sm:text-3xl font-bold leading-snug mb-2 font-serif text-[#fafaf5]"
+          style={{ fontFamily: "Georgia, serif" }}
+        >
+          Email Sudah Diverifikasi
+        </h1>
+        <p className="text-sm mb-8 text-[#8fbf7f] max-w-sm leading-relaxed">
+          Alamat email ini telah terverifikasi sebelumnya. Anda dapat langsung masuk ke akun Anda.
+        </p>
+
+        <Link
+          href="/login"
+          className="w-full py-3.5 rounded-xl font-bold text-sm text-center transition-all text-[#1e4d2b] bg-[#d0f0c0] hover:bg-[#bce6aa] shadow-md active:scale-95"
+        >
+          Masuk ke CiviLens
+        </Link>
+      </div>
+    );
+  }
+
+  // State 3: Invalid / Expired Signature
+  if (errorParam === "invalid_signature" || errorParam === "invalid_hash") {
+    return (
+      <div className="flex flex-col items-center w-full text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-950/60 border border-red-500/30 text-[#f87171] mb-6 shadow-md">
+          <svg className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="15" y1="9" x2="9" y2="15" />
+            <line x1="9" y1="9" x2="15" y2="15" />
+          </svg>
+        </div>
+
+        <h1
+          className="text-2xl sm:text-3xl font-bold leading-snug mb-2 font-serif text-[#fafaf5]"
+          style={{ fontFamily: "Georgia, serif" }}
+        >
+          Link Verifikasi Tidak Valid
+        </h1>
+        <p className="text-sm mb-8 text-[#f87171] max-w-sm leading-relaxed">
+          Tautan verifikasi telah kedaluwarsa atau tidak valid. Silakan masuk atau minta pengiriman ulang tautan verifikasi baru.
+        </p>
+
+        <Link
+          href="/login"
+          className="w-full py-3.5 rounded-xl font-bold text-sm text-center transition-all text-[#fafaf5] border border-[rgba(208,240,192,0.3)] hover:bg-[rgba(208,240,192,0.1)] active:scale-95"
+        >
+          Kembali ke Login
+        </Link>
+      </div>
+    );
+  }
+
+  // State 4: Default Pending Verification Prompt
   return (
     <div className="flex flex-col items-center w-full">
       <Image
@@ -200,5 +295,15 @@ function RightPanel() {
 }
 
 export default function VerifyEmailPage() {
-  return <AuthWaveLayout left={<LeftPanel />} right={<RightPanel />} />;
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-[#1e4d2b] text-[#fafaf5]">
+          <p className="text-sm">Memuat status verifikasi...</p>
+        </div>
+      }
+    >
+      <AuthWaveLayout left={<LeftPanel />} right={<RightPanel />} />
+    </Suspense>
+  );
 }
