@@ -14,6 +14,7 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push: mockPush,
   }),
+  usePathname: () => "/reports",
   useParams: () => ({
     id: "101",
   }),
@@ -74,8 +75,8 @@ describe("TASK-011 Report UX & Dynamic Topic Integration", () => {
     });
   });
 
-  describe("CreateReportPage 5-Step Flow", () => {
-    it("renders step 1 (details) and validates minimum title and description", async () => {
+  describe("CreateReportPage 2-Step Flow", () => {
+    it("validates evidence photos and location before advancing to details", async () => {
       render(
         <AuthProvider>
           <CreateReportPage />
@@ -83,21 +84,18 @@ describe("TASK-011 Report UX & Dynamic Topic Integration", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByRole("heading", { name: /1\. Apa Yang Terjadi\?/i })).toBeDefined();
+        expect(screen.getByText("1. Bukti & Lokasi")).toBeDefined();
       });
 
-      expect(screen.getByLabelText(/Judul Laporan/i)).toBeDefined();
-      expect(screen.getByLabelText(/Deskripsi Lengkap Masalah/i)).toBeDefined();
-
-      const nextButton = screen.getByRole("button", { name: /Lanjut: Pilih Topik/i });
+      const nextButton = screen.getByRole("button", { name: /Lanjut: Detail Masalah & Review/i });
       fireEvent.click(nextButton);
 
       await waitFor(() => {
-        expect(screen.getByText("Judul laporan wajib diisi.")).toBeDefined();
+        expect(screen.getByText("Wajib menyertakan minimal 1 foto bukti kondisi lingkungan.")).toBeDefined();
       });
     });
 
-    it("advances through topics, map location, 1-3 photo evidence, and submits report successfully", async () => {
+    it("advances through evidence & location, details, and submits report successfully", async () => {
       vi.spyOn(apiClient, "createReport").mockResolvedValue(mockReport);
       vi.spyOn(apiClient, "uploadReportMedia").mockResolvedValue(mockReport.media![0]);
 
@@ -111,9 +109,31 @@ describe("TASK-011 Report UX & Dynamic Topic Integration", () => {
         </AuthProvider>
       );
 
-      // --- STEP 1: Details ---
+      // --- STEP 1: Evidence & Location ---
       await waitFor(() => {
-        expect(screen.getByRole("heading", { name: /1\. Apa Yang Terjadi\?/i })).toBeDefined();
+        expect(screen.getByText("1. Bukti & Lokasi")).toBeDefined();
+      });
+
+      // Attach 1 photo
+      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+      const fakeFile = new File(["fake_content"], "evidence.jpg", { type: "image/jpeg" });
+      fireEvent.change(fileInput, { target: { files: [fakeFile] } });
+
+      await waitFor(() => {
+        expect(screen.getByText(/1\/3 Foto/i)).toBeDefined();
+      });
+
+      // Address landmark input
+      const addressInput = screen.getByLabelText(/Alamat \/ Patokan Lokasi Lengkap/i);
+      fireEvent.change(addressInput, { target: { value: "Jl. Sudirman No. 12, Jakarta Pusat" } });
+
+      const nextToDetails = screen.getByRole("button", { name: /Lanjut: Detail Masalah & Review/i });
+      fireEvent.click(nextToDetails);
+
+      // --- STEP 2: Details & Review ---
+      await waitFor(() => {
+        expect(screen.getByText("2. Detail Masalah & Kirim")).toBeDefined();
+        expect(screen.getByLabelText(/Judul Laporan/i)).toBeDefined();
       });
 
       fireEvent.change(screen.getByLabelText(/Judul Laporan/i), {
@@ -121,14 +141,6 @@ describe("TASK-011 Report UX & Dynamic Topic Integration", () => {
       });
       fireEvent.change(screen.getByLabelText(/Deskripsi Lengkap Masalah/i), {
         target: { value: "Ada tumpukan sampah plastik yang menyumbat aliran sungai di dekat jembatan panjang." },
-      });
-
-      fireEvent.click(screen.getByRole("button", { name: /Lanjut: Pilih Topik/i }));
-
-      // --- STEP 2: Topics ---
-      await waitFor(() => {
-        expect(screen.getByRole("heading", { name: /2\. Topik & Kategori/i })).toBeDefined();
-        expect(screen.getByText(/#Sampah/)).toBeDefined();
       });
 
       // Select existing topic chip #Sampah
@@ -143,51 +155,8 @@ describe("TASK-011 Report UX & Dynamic Topic Integration", () => {
         expect(screen.getByText("#LimbahPlastik")).toBeDefined();
       });
 
-      fireEvent.click(screen.getByRole("button", { name: /Lanjut: Tentukan Lokasi/i }));
-
-      // --- STEP 3: Location (Map-First) ---
-      await waitFor(() => {
-        expect(screen.getByRole("heading", { name: /3\. Lokasi Kejadian/i })).toBeDefined();
-      });
-
-      // Address landmark input
-      const addressInput = screen.getByLabelText(/Alamat \/ Patokan Lokasi Lengkap/i);
-      fireEvent.change(addressInput, { target: { value: "Jl. Sudirman No. 12, Jakarta Pusat" } });
-
-      fireEvent.click(screen.getByRole("button", { name: /Lanjut: Unggah Bukti Foto/i }));
-
-      // --- STEP 4: Evidence Photos (Min 1, Max 3) ---
-      await waitFor(() => {
-        expect(screen.getByRole("heading", { name: /4\. Bukti Foto Lingkungan/i })).toBeDefined();
-        expect(screen.getByText(/0\/3 — Wajib min\. 1 foto/i)).toBeDefined();
-      });
-
-      // Verify next button is disabled without photos
-      const nextToReview = screen.getByRole("button", { name: /Lanjut: Periksa Ringkasan/i });
-      expect(nextToReview.hasAttribute("disabled")).toBe(true);
-
-      // Attach 1 photo
-      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-      const fakeFile = new File(["fake_content"], "evidence.jpg", { type: "image/jpeg" });
-      fireEvent.change(fileInput, { target: { files: [fakeFile] } });
-
-      await waitFor(() => {
-        expect(screen.getByText(/1\/3 Foto/i)).toBeDefined();
-        expect(nextToReview.hasAttribute("disabled")).toBe(false);
-      });
-
-      fireEvent.click(nextToReview);
-
-      // --- STEP 5: Review & Submit ---
-      await waitFor(() => {
-        expect(screen.getByText("Tumpukan Sampah Menumpuk di Sungai")).toBeDefined();
-        expect(screen.getByText("#Sampah")).toBeDefined();
-        expect(screen.getByText("#LimbahPlastik")).toBeDefined();
-        expect(screen.getByText("Jl. Sudirman No. 12, Jakarta Pusat")).toBeDefined();
-      });
-
       // Submit
-      const submitBtn = screen.getByRole("button", { name: /Kirim Laporan Resmi/i });
+      const submitBtn = screen.getAllByRole("button", { name: /Kirim Laporan Resmi/i })[0];
       fireEvent.click(submitBtn);
 
       await waitFor(() => {

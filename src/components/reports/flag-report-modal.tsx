@@ -53,7 +53,7 @@ export default function FlagReportModal({
         <div className="flex items-center justify-between border-b border-[#f0f4ee] pb-3">
           <div className="flex items-center gap-2 text-[#1e4d2b]">
             <IconShield className="h-5 w-5" />
-            <h2 className="text-base font-bold font-serif" style={{ fontFamily: "Georgia, serif" }}>
+            <h2 className="text-base font-bold text-[#1c241e]">
               Laporkan Pelanggaran Konten
             </h2>
           </div>

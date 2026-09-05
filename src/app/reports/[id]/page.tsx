@@ -15,6 +15,7 @@ import ReportComments from "@/components/reports/report-comments";
 import ReportTimeline from "@/components/reports/report-timeline";
 import FlagReportModal from "@/components/reports/flag-report-modal";
 import { ReportDetailSkeleton } from "@/components/ui/skeletons";
+import { AuthenticatedShell } from "@/components/layout/authenticated-shell";
 import {
   IconPin,
   IconSparkles,
@@ -22,6 +23,9 @@ import {
   IconBookmark,
   IconUser,
   IconShield,
+  IconCamera,
+  IconChevronDown,
+  IconChevronUp,
 } from "@/components/ui/icons";
 
 function getStatusBadge(status: string) {
@@ -37,43 +41,43 @@ function getStatusBadge(status: string) {
     case "selesai":
       return {
         label: "Selesai Ditindaklanjuti",
-        bg: "bg-emerald-50 border-emerald-200 text-emerald-800",
-        dot: "bg-emerald-500",
+        bg: "bg-[#edf7ed] border-[#bbf7d0] text-[#15803d]",
+        dot: "bg-[#15803d]",
       };
     case "in_progress":
     case "ditindaklanjuti":
       return {
         label: "Sedang Ditindaklanjuti",
-        bg: "bg-purple-50 border-purple-200 text-purple-800",
-        dot: "bg-purple-500",
+        bg: "bg-[#f5f3ff] border-[#ddd6fe] text-[#6d28d9]",
+        dot: "bg-[#6d28d9]",
       };
     case "verified":
     case "terverifikasi":
       return {
         label: "Terverifikasi",
-        bg: "bg-teal-50 border-teal-200 text-teal-800",
-        dot: "bg-teal-500",
+        bg: "bg-[#f0fdfa] border-[#99f6e4] text-[#0f766e]",
+        dot: "bg-[#0f766e]",
       };
     case "under_review":
     case "diproses":
       return {
         label: "Dalam Peninjauan",
-        bg: "bg-blue-50 border-blue-200 text-blue-800",
-        dot: "bg-blue-500",
+        bg: "bg-[#eff6ff] border-[#bfdbfe] text-[#1d4ed8]",
+        dot: "bg-[#1d4ed8]",
       };
     case "rejected":
     case "ditolak":
       return {
         label: "Ditolak / Tidak Valid",
-        bg: "bg-red-50 border-red-200 text-red-800",
-        dot: "bg-red-500",
+        bg: "bg-[#fee2e2] border-[#fecaca] text-[#b91c1c]",
+        dot: "bg-[#b91c1c]",
       };
     case "pending":
     default:
       return {
         label: "Menunggu Peninjauan",
-        bg: "bg-amber-50 border-amber-200 text-amber-800",
-        dot: "bg-amber-500",
+        bg: "bg-[#fef3c7] border-[#fde68a] text-[#b45309]",
+        dot: "bg-[#b45309]",
       };
   }
 }
@@ -81,15 +85,46 @@ function getStatusBadge(status: string) {
 function getSeverityBadge(severity?: string | null) {
   switch (severity) {
     case "critical":
-      return { label: "Kritis", bg: "bg-red-100 text-red-800 border-red-300" };
+      return { label: "Kritis", bg: "bg-[#fee2e2] text-[#b91c1c] border-[#fecaca]" };
     case "high":
-      return { label: "Tinggi", bg: "bg-orange-100 text-orange-800 border-orange-300" };
+      return { label: "Tinggi", bg: "bg-[#ffedd5] text-[#c2410c] border-[#fed7aa]" };
     case "medium":
-      return { label: "Sedang", bg: "bg-amber-100 text-amber-800 border-amber-300" };
+      return { label: "Sedang", bg: "bg-[#fef3c7] text-[#b45309] border-[#fde68a]" };
     case "low":
     default:
-      return { label: "Rendah", bg: "bg-emerald-100 text-emerald-800 border-emerald-300" };
+      return { label: "Rendah", bg: "bg-[#edf7ed] text-[#15803d] border-[#bbf7d0]" };
   }
+}
+
+function ReportDetailMediaGallery({ media }: { media?: Report["media"] }) {
+  if (!media || media.length === 0) return null;
+
+  return (
+    <div className="space-y-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+        {media.map((item, idx) => (
+          <div
+            key={item.id || idx}
+            className="rounded-xl overflow-hidden border border-[#e2e6df] bg-[#f4f5f0] p-3 flex flex-col justify-between aspect-video sm:aspect-4/3 transition"
+          >
+            <div className="flex items-center justify-center flex-1">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e2ede4] text-[#225332]">
+                <IconCamera className="h-5 w-5" />
+              </div>
+            </div>
+            <div className="pt-2 border-t border-[#e2e6df]/60 flex items-center justify-between text-[11px]">
+              <span className="font-semibold text-[#1c241e] truncate max-w-[130px]" title={item.original_name}>
+                {item.original_name}
+              </span>
+              <span className="text-[#8c978f] shrink-0">
+                {(item.size / 1024).toFixed(0)} KB
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export default function ReportDetailPage() {
@@ -105,17 +140,23 @@ export default function ReportDetailPage() {
   const [reacting, setReacting] = useState(false);
   const [bookmarking, setBookmarking] = useState(false);
   const [flagModalOpen, setFlagModalOpen] = useState(false);
+  const [showAiDetail, setShowAiDetail] = useState(false);
 
   const isNewlyCreated = searchParams?.get("created") === "1";
+
+  const [reloadTrigger, setReloadTrigger] = useState(0);
 
   // Initial load
   useEffect(() => {
     if (!reportId) return;
-
     let mounted = true;
+
     getReport(reportId)
       .then((data) => {
-        if (mounted) setReport(data);
+        if (mounted) {
+          setReport(data);
+          setError("");
+        }
       })
       .catch((err) => {
         if (mounted) {
@@ -123,13 +164,15 @@ export default function ReportDetailPage() {
         }
       })
       .finally(() => {
-        if (mounted) setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       });
 
     return () => {
       mounted = false;
     };
-  }, [reportId]);
+  }, [reportId, reloadTrigger]);
 
   // Polling while AI analysis is pending/processing
   useEffect(() => {
@@ -259,47 +302,41 @@ export default function ReportDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen flex-col bg-[#fafaf5] text-[#2c2926]">
-        <header className="border-b border-[#eae2d3] bg-[#fafaf5]/90 backdrop-blur-xs sticky top-0 z-20">
-          <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-            <Link href="/reports" className="flex items-center gap-2.5 transition-opacity hover:opacity-85">
-              <div className="h-6 w-6 rounded-full bg-[#1e4d2b] text-white flex items-center justify-center text-xs font-bold font-serif">
-                C
-              </div>
-              <span className="text-lg font-bold tracking-tight text-[#1c4123]" style={{ fontFamily: "Georgia, serif" }}>
-                CiviLens
-              </span>
-            </Link>
-          </div>
-        </header>
-
-        <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-6 py-8">
-          <ReportDetailSkeleton />
-        </main>
-      </div>
+      <AuthenticatedShell maxWidth="narrow">
+        <ReportDetailSkeleton />
+      </AuthenticatedShell>
     );
   }
 
   if (error || !report) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-[#fafaf5] px-6 text-center">
-        <div className="max-w-md rounded-2xl border border-[#eae2d3] bg-white p-8 shadow-xs space-y-4">
-          <h1 className="text-xl font-bold font-serif text-[#1c4123]" style={{ fontFamily: "Georgia, serif" }}>
-            Laporan Tidak Ditemukan
-          </h1>
-          <p className="text-sm text-[#57524d]">
-            {error || "Laporan yang Anda cari mungkin telah dihapus atau URL tidak valid."}
-          </p>
-          <div className="pt-2">
-            <Link
-              href="/reports"
-              className="inline-flex items-center gap-2 rounded-xl bg-[#1e4d2b] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#163a20] transition shadow-xs"
-            >
-              &larr; Lihat Semua Laporan
-            </Link>
+      <AuthenticatedShell maxWidth="narrow">
+        <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+          <div className="max-w-md rounded-2xl border border-[#e2e6df] bg-white p-8 shadow-xs space-y-4">
+            <h1 className="text-xl font-bold text-[#1c241e]">
+              Laporan Tidak Ditemukan
+            </h1>
+            <p className="text-sm text-[#5c685f]">
+              {error || "Laporan yang Anda cari mungkin telah dihapus atau URL tidak valid."}
+            </p>
+            <div className="pt-2 flex items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => setReloadTrigger((prev) => prev + 1)}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-[#e2e6df] bg-[#fafaf7] px-4 py-2 text-sm font-semibold text-[#1c241e] hover:bg-white transition shadow-xs"
+              >
+                Coba Lagi
+              </button>
+              <Link
+                href="/reports"
+                className="inline-flex items-center gap-2 rounded-xl bg-[#225332] px-5 py-2 text-sm font-semibold text-white hover:bg-[#173722] transition shadow-xs"
+              >
+                &larr; Lihat Semua Laporan
+              </Link>
+            </div>
           </div>
         </div>
-      </div>
+      </AuthenticatedShell>
     );
   }
 
@@ -311,358 +348,316 @@ export default function ReportDetailPage() {
     : report.category ? [{ id: 0, name: report.category.name, slug: report.category.slug }] : [];
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#fafaf5] text-[#2c2926]">
-      {/* Top Header */}
-      <header className="border-b border-[#eae2d3] bg-[#fafaf5]/90 backdrop-blur-xs sticky top-0 z-20">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <Link href="/reports" className="flex items-center gap-2.5 transition-opacity hover:opacity-85">
-            <div className="h-6 w-6 rounded-full bg-[#1e4d2b] text-white flex items-center justify-center text-xs font-bold font-serif">
-              C
-            </div>
-            <span className="text-lg font-bold tracking-tight text-[#1c4123]" style={{ fontFamily: "Georgia, serif" }}>
-              CiviLens
-            </span>
+    <AuthenticatedShell maxWidth="narrow">
+      <div className="space-y-6">
+        {/* Navigation Breadcrumb */}
+        <div className="flex items-center gap-2 text-xs text-[#5c685f]">
+          <Link href="/reports" className="hover:text-[#1c241e] transition flex items-center gap-1 font-medium text-[#225332]">
+            <span>&larr; Kembali ke Feed Laporan</span>
           </Link>
-
-          <div className="flex items-center gap-3">
-            <Link
-              href="/reports"
-              className="text-xs font-semibold text-[#4a6b52] hover:text-[#1e4d2b] transition"
-            >
-              Semua Laporan
-            </Link>
-            {user && (
-              <Link
-                href="/bookmarks"
-                className="text-xs font-semibold text-[#4a6b52] hover:text-[#1e4d2b] transition"
-              >
-                Tersimpan
-              </Link>
-            )}
-            <Link
-              href="/reports/create"
-              className="rounded-lg bg-[#1e4d2b] px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-[#163a20] transition shadow-xs"
-            >
-              + Buat Laporan
-            </Link>
-          </div>
+          <span>/</span>
+          <span className="text-[#1c241e] font-semibold truncate max-w-[240px]">
+            {report.title}
+          </span>
         </div>
-      </header>
 
-      {/* Main Container */}
-      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-6 py-8">
-        <div className="space-y-6">
-          {/* Newly Created Banner */}
-          {isNewlyCreated && (
-            <div className="rounded-2xl border border-[#cbe0ce] bg-[#f4f8f4] p-5 shadow-xs flex items-start gap-3.5 animate-in fade-in duration-300">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#1e4d2b] text-white text-sm font-bold">
-                ✓
+        {/* Newly Created Banner */}
+        {isNewlyCreated && (
+          <div className="rounded-2xl border border-[#c5dcce] bg-[#f2f7f3] p-4 sm:p-5 shadow-xs flex items-start gap-3.5">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#225332] text-white text-sm font-bold">
+              ✓
+            </div>
+            <div className="space-y-1 text-xs">
+              <p className="text-sm font-bold text-[#173722]">
+                Laporan Anda Berhasil Dikirim ke Sistem!
+              </p>
+              <p className="text-[#5c685f] leading-relaxed">
+                Laporan telah tercatat dengan ID <strong className="font-mono text-[#1c241e]">#{report.id}</strong>. Pipeline AI CiviLens sedang menganalisis keparahan dampak dan menyusun ringkasan objektif.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* 1. PRIMARY CASE FILE CARD */}
+        <div className="rounded-2xl border border-[#e2e6df] bg-white p-5 sm:p-7 shadow-xs space-y-6">
+          {/* Header Metadata & Single Official Status */}
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#edf0ea] pb-4">
+            <div className="flex flex-wrap items-center gap-1.5">
+              {displayTopics.map((t, idx) => (
+                <span
+                  key={idx}
+                  className="rounded-full bg-[#f4f5f0] border border-[#e2e6df] px-2.5 py-0.5 text-xs font-semibold text-[#225332]"
+                >
+                  #{t.name}
+                </span>
+              ))}
+              <span className="text-xs text-[#8c978f] font-mono ml-1">
+                ID: #{report.id}
+              </span>
+            </div>
+
+            {/* Official Status Badge */}
+            <div className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${statusBadge.bg}`}>
+              <span className={`h-2 w-2 rounded-full ${statusBadge.dot}`} />
+              <span>{statusBadge.label}</span>
+            </div>
+          </div>
+
+          {/* Title & Author Info */}
+          <div className="space-y-2">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#1c241e] leading-snug">
+              {report.title}
+            </h1>
+            <div className="flex flex-wrap items-center gap-2 text-xs text-[#5c685f]">
+              {report.author ? (
+                <Link
+                  href={`/users/${report.author.id}`}
+                  className="inline-flex items-center gap-1 font-semibold text-[#1c241e] hover:text-[#225332] transition"
+                >
+                  <IconUser className="h-3.5 w-3.5 text-[#225332]" />
+                  <span>{report.author.name}</span>
+                </Link>
+              ) : (
+                <span className="inline-flex items-center gap-1 font-semibold text-[#1c241e]">
+                  <IconUser className="h-3.5 w-3.5 text-[#225332]" />
+                  <span>Warga Komunitas</span>
+                </span>
+              )}
+              <span>&bull;</span>
+              <span>
+                {new Date(report.created_at).toLocaleDateString("id-ID", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}{" "}
+                WIB
+              </span>
+            </div>
+          </div>
+
+          {/* Evidence First: Attached Photo Gallery */}
+          {report.media && report.media.length > 0 && (
+            <div className="space-y-2.5 pt-2 border-t border-[#edf0ea]">
+              <div className="flex items-center justify-between text-xs text-[#5c685f]">
+                <span className="font-semibold uppercase tracking-wider text-[11px] text-[#1c241e] flex items-center gap-1.5">
+                  <IconCamera className="h-4 w-4 text-[#225332]" />
+                  <span>Dokumentasi Bukti Lapangan ({report.media.length})</span>
+                </span>
+                <span className="text-[#8c978f]">Otentik & Terverifikasi</span>
               </div>
-              <div className="space-y-1">
-                <p className="text-sm font-bold text-[#1c4123]">
-                  Laporan Anda Berhasil Dikirim ke Sistem!
-                </p>
-                <p className="text-xs text-[#57524d] leading-relaxed">
-                  Laporan telah tercatat dengan ID <strong className="font-mono text-[#1c4123]">#{report.id}</strong>. Pipeline AI CiviLens sedang menganalisis keparahan dampak dan menyusun ringkasan objektif.
-                </p>
-              </div>
+              <ReportDetailMediaGallery media={report.media} />
             </div>
           )}
 
-          {/* Breadcrumb Navigation */}
-          <div className="flex items-center gap-2 text-xs text-[#7a9a80]">
-            <Link href="/reports" className="hover:text-[#1c4123] transition flex items-center gap-1 font-medium text-[#1e4d2b]">
-              <span>&larr; Kembali ke Feed Laporan</span>
-            </Link>
-            <span>/</span>
-            <span className="text-[#1c4123] font-medium truncate max-w-[200px]">
-              {report.title}
-            </span>
+          {/* Problem Description */}
+          <div className="space-y-2 pt-2 border-t border-[#edf0ea]">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-[#8c978f]">
+              Deskripsi Masalah
+            </h2>
+            <p className="text-sm text-[#1c241e] leading-relaxed whitespace-pre-line">
+              {report.description}
+            </p>
           </div>
 
-          {/* Report Main Header Card */}
-          <div className="rounded-2xl border border-[#eae2d3] bg-white p-6 sm:p-8 shadow-xs space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#f0f4ee] pb-4">
-              <div className="flex flex-wrap items-center gap-1.5">
-                {displayTopics.map((t, idx) => (
-                  <span
-                    key={idx}
-                    className="rounded-full bg-[#f4f8f4] border border-[#cbe0ce] px-2.5 py-0.5 text-xs font-semibold text-[#1e4d2b]"
-                  >
-                    #{t.name}
-                  </span>
-                ))}
-                <span className="text-xs text-[#7a9a80] font-mono ml-1">
-                  ID: #{report.id}
-                </span>
-              </div>
-
-              {/* Status Badge */}
-              <div className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1 text-xs font-semibold ${statusBadge.bg}`}>
-                <span className={`h-2 w-2 rounded-full ${statusBadge.dot}`} />
-                <span>{statusBadge.label}</span>
-              </div>
-            </div>
-
-            {/* Title & Metadata */}
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#17361d]" style={{ fontFamily: "Georgia, serif" }}>
-                {report.title}
-              </h1>
-              <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-[#7a9a80]">
-                {report.author && (
-                  <Link
-                    href={`/users/${report.author.id}`}
-                    className="flex items-center gap-1 font-semibold text-[#1c4123] hover:underline"
-                  >
-                    <IconUser className="h-3.5 w-3.5 text-[#1e4d2b]" />
-                    <span>{report.author.name}</span>
-                  </Link>
-                )}
-                <span>&bull;</span>
-                <span>
-                  Dilaporkan pada{" "}
-                  {new Date(report.created_at).toLocaleDateString("id-ID", {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}{" "}
-                  WIB
-                </span>
-              </div>
-            </div>
-
-            {/* Civic Actions Bar: Support & Bookmark */}
-            <div className="flex items-center gap-2.5 pt-2 border-t border-[#f0f4ee]">
-              <button
-                type="button"
-                onClick={handleToggleReaction}
-                disabled={!user || reacting}
-                className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-semibold transition ${
-                  report.user_reacted
-                    ? "bg-[#1e4d2b] text-white border-[#1e4d2b]"
-                    : "bg-[#fafaf5] text-[#1c4123] border-[#cbe0ce] hover:bg-[#f4f8f4]"
-                } ${!user ? "opacity-60 cursor-not-allowed" : ""}`}
-                title={user ? "Beri dukungan warga pada laporan ini" : "Masuk untuk memberi dukungan"}
-              >
-                <IconThumbsUp className="h-4 w-4" />
-                <span>{report.user_reacted ? "Didukung" : "Dukung Laporan"}</span>
-                <span className="ml-1 rounded-full bg-black/10 px-1.5 py-0.2 text-[10px]">
-                  {report.reactions_count || 0}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleToggleBookmark}
-                disabled={!user || bookmarking}
-                className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-semibold transition ${
-                  report.user_bookmarked
-                    ? "bg-[#7a4400] text-white border-[#7a4400]"
-                    : "bg-[#fafaf5] text-[#57524d] border-[#cbe0ce] hover:bg-[#f4f8f4]"
-                } ${!user ? "opacity-60 cursor-not-allowed" : ""}`}
-                title={user ? "Simpan laporan ke bookmark" : "Masuk untuk menyimpan"}
-              >
-                <IconBookmark className="h-4 w-4" />
-                <span>{report.user_bookmarked ? "Tersimpan" : "Simpan"}</span>
-              </button>
-
-              {user && user.id !== report.author?.id && (
-                <button
-                  type="button"
-                  onClick={() => setFlagModalOpen(true)}
-                  className="ml-auto inline-flex items-center gap-1 rounded-xl px-3 py-2 text-xs font-medium text-[#8c857e] hover:text-red-700 hover:bg-red-50 transition"
-                  title="Laporkan indikasi pelanggaran"
-                >
-                  <IconShield className="h-3.5 w-3.5" />
-                  <span>Laporkan</span>
-                </button>
-              )}
-            </div>
-
-            {/* Location Section */}
-            {report.location && (
-              <div className="rounded-xl bg-[#fafaf5] border border-[#eae2d3] p-4 space-y-1">
-                <p className="text-xs font-semibold uppercase tracking-wider text-[#1c4123] flex items-center gap-1.5">
-                  <IconPin className="h-4 w-4 text-[#1e4d2b]" />
-                  <span>Lokasi Kejadian</span>
-                </p>
-                <p className="text-sm font-medium text-[#2c2926] pl-5.5">
-                  {report.location.address}
-                </p>
-                {report.location.latitude && report.location.longitude && (
-                  <p className="text-xs text-[#7a9a80] font-mono pl-5.5">
-                    Koordinat GPS: {report.location.latitude}, {report.location.longitude}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Problem Description */}
-            <div className="space-y-2">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-[#7a9a80]">
-                Deskripsi Masalah
-              </h2>
-              <p className="text-sm text-[#2c2926] leading-relaxed whitespace-pre-line">
-                {report.description}
+          {/* Location Context */}
+          {report.location && (
+            <div className="rounded-xl bg-[#fafaf7] border border-[#e2e6df] p-3.5 space-y-1">
+              <p className="text-xs font-semibold uppercase tracking-wider text-[#1c241e] flex items-center gap-1.5">
+                <IconPin className="h-4 w-4 text-[#225332]" />
+                <span>Titik Lokasi Kejadian</span>
               </p>
-            </div>
-
-              {/* Attached Media */}
-              {report.media && report.media.length > 0 && (
-                <div className="space-y-3 pt-4 border-t border-[#f0f4ee]">
-                  <h2 className="text-xs font-semibold uppercase tracking-wider text-[#7a9a80]">
-                    Foto Bukti Terlampir ({report.media.length})
-                  </h2>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {report.media.map((item) => (
-                      <div
-                        key={item.id}
-                        className="rounded-xl overflow-hidden border border-[#cbe0ce] aspect-video bg-[#fafaf5] p-3 flex flex-col justify-between"
-                      >
-                        <span className="text-xs font-medium text-[#1c4123] truncate">
-                          {item.original_name}
-                        </span>
-                        <div className="text-[11px] text-[#7a9a80] flex items-center justify-between">
-                          <span>{(item.size / 1024).toFixed(0)} KB</span>
-                          <span className="rounded-full bg-[#f4f8f4] border border-[#cbe0ce] px-2 py-0.2 text-[9px] font-semibold text-[#1e4d2b]">
-                            Terverifikasi
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              <p className="text-sm font-medium text-[#1c241e] pl-5.5">
+                {report.location.address}
+              </p>
+              {report.location.latitude && report.location.longitude && (
+                <p className="text-xs text-[#8c978f] font-mono pl-5.5">
+                  Koordinat GPS: {report.location.latitude}, {report.location.longitude}
+                </p>
               )}
-          </div>
+            </div>
+          )}
 
-          {/* AI Assessment Panel */}
-          <div className="rounded-2xl border border-[#cbe0ce] bg-white p-6 sm:p-8 shadow-xs space-y-5">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#f0f4ee] pb-4">
-              <div className="flex items-center gap-2.5">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#1e4d2b] text-white text-xs font-bold">
-                  <IconSparkles className="h-3.5 w-3.5" />
-                </span>
-                <h2 className="text-lg font-bold font-serif text-[#1e4d2b]" style={{ fontFamily: "Georgia, serif" }}>
+          {/* Primary Civic Actions Bar */}
+          <div className="flex items-center gap-2.5 pt-3 border-t border-[#edf0ea]">
+            <button
+              type="button"
+              onClick={handleToggleReaction}
+              disabled={!user || reacting}
+              className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-semibold transition active:scale-[0.98] ${
+                report.user_reacted
+                  ? "bg-[#225332] text-white border-[#225332]"
+                  : "bg-[#fafaf7] text-[#1c241e] border-[#e2e6df] hover:bg-white"
+              } ${!user ? "opacity-60 cursor-not-allowed" : ""}`}
+              title={user ? "Beri dukungan warga pada laporan ini" : "Masuk untuk memberi dukungan"}
+            >
+              <IconThumbsUp className="h-4 w-4" />
+              <span>{report.user_reacted ? "Didukung" : "Dukung Laporan"}</span>
+              <span className="ml-1 rounded-full bg-black/10 px-1.5 py-0.2 text-[10px]">
+                {report.reactions_count || 0}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleToggleBookmark}
+              disabled={!user || bookmarking}
+              className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-semibold transition active:scale-[0.98] ${
+                report.user_bookmarked
+                  ? "bg-[#b45309] text-white border-[#b45309]"
+                  : "bg-[#fafaf7] text-[#5c685f] border-[#e2e6df] hover:bg-white hover:text-[#1c241e]"
+              } ${!user ? "opacity-60 cursor-not-allowed" : ""}`}
+              title={user ? "Simpan laporan ke bookmark" : "Masuk untuk menyimpan"}
+            >
+              <IconBookmark className="h-4 w-4" />
+              <span>{report.user_bookmarked ? "Tersimpan" : "Simpan"}</span>
+            </button>
+
+            {user && user.id !== report.author?.id && (
+              <button
+                type="button"
+                onClick={() => setFlagModalOpen(true)}
+                className="ml-auto inline-flex items-center gap-1 rounded-xl px-3 py-2 text-xs font-medium text-[#8c978f] hover:text-[#b91c1c] hover:bg-[#fee2e2]/60 transition"
+                title="Laporkan indikasi pelanggaran"
+              >
+                <IconShield className="h-3.5 w-3.5" />
+                <span>Laporkan</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* 2. CIVILENS AI ANALYSIS (Supporting Assistant Signal) */}
+        <div className="rounded-2xl border border-[#e2e6df] bg-white p-5 sm:p-6 shadow-xs space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#edf0ea] pb-3">
+            <div className="flex items-center gap-2">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#225332] text-white text-xs font-bold">
+                <IconSparkles className="h-3.5 w-3.5" />
+              </span>
+              <div>
+                <h2 className="text-base font-bold text-[#1c241e]">
                   Analisis Dampak Lingkungan (AI Assessment)
                 </h2>
+                <p className="text-[11px] text-[#8c978f]">
+                  Asisten cerdas pendukung keputusan, bukan pengganti verifikasi resmi instansi.
+                </p>
               </div>
-
-              {ai?.severity && ai.status === "completed" && (
-                <span className={`rounded-full border px-3 py-0.5 text-xs font-bold ${severityBadge.bg}`}>
-                  Tingkat Keparahan: {severityBadge.label}
-                </span>
-              )}
             </div>
 
-            {!ai ? (
-              <div className="text-center py-6 space-y-2">
-                <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#1e4d2b] border-t-transparent mx-auto" />
-                <p className="text-xs text-[#57524d]">
-                  Menyiapkan antrean analisis AI...
-                </p>
-              </div>
-            ) : ai.status === "processing" || ai.status === "pending" ? (
-              <div className="rounded-xl bg-[#fafaf5] p-4 border border-[#eae2d3] text-xs text-[#57524d] flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#1e4d2b] border-t-transparent shrink-0" />
-                  <span>
-                    Analisis AI sedang diproses secara asinkron ({ai.status === "pending" ? "menunggu antrean" : "menganalisis bukti & konteks"})...
-                  </span>
-                </div>
-                <span className="text-[10px] text-[#7a9a80] hidden sm:inline">Memperbarui otomatis</span>
-              </div>
-            ) : ai.status === "failed" ? (
-              <div className="rounded-xl bg-amber-50 p-4 border border-amber-200 text-xs text-amber-900 space-y-3">
-                <div className="flex items-center justify-between">
-                  <p className="font-medium">
-                    Analisis AI otomatis belum berhasil diselesaikan pada percobaan ini.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={handleRetryAi}
-                    disabled={isRetryingAi}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#1e4d2b] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#163a20] transition disabled:opacity-50"
-                  >
-                    <span>{isRetryingAi ? "Menjadwalkan..." : "Ulangi Analisis AI"}</span>
-                  </button>
-                </div>
-                <p className="text-[11px] text-amber-800">
-                  Laporan Anda tetap valid dan tersimpan aman. Tim penanganan tetap dapat memproses laporan ini.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {ai.summary && (
-                  <div className="space-y-1">
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-[#7a9a80]">
-                      Ringkasan Fakta Masalah
-                    </h3>
-                    <p className="text-sm font-medium text-[#1c4123] leading-relaxed">
-                      {ai.summary}
-                    </p>
-                  </div>
-                )}
-
-                {ai.analysis && (
-                  <div className="space-y-1">
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-[#7a9a80]">
-                      Penilaian Objektif & Dampak
-                    </h3>
-                    <p className="text-sm text-[#57524d] leading-relaxed whitespace-pre-line">
-                      {ai.analysis}
-                    </p>
-                  </div>
-                )}
-
-                <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-[#f0f4ee] text-xs text-[#7a9a80]">
-                  {ai.confidence !== null && ai.confidence !== undefined && (
-                    <span>
-                      Tingkat Keyakinan Model: <strong className="text-[#1c4123]">{(ai.confidence * 100).toFixed(0)}%</strong>
-                    </span>
-                  )}
-                  {report.media && report.media.length > 0 && (
-                    <span>
-                      Bukti Foto Dianalisis: <strong className="text-[#1c4123]">{Math.min(report.media.length, 3)} Foto</strong>
-                    </span>
-                  )}
-                  <span>
-                    Status AI: <strong className="text-emerald-700 capitalize">{ai.status}</strong>
-                  </span>
-                </div>
-              </div>
+            {ai?.severity && ai.status === "completed" && (
+              <span className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${severityBadge.bg}`}>
+                Tingkat Keparahan: {severityBadge.label}
+              </span>
             )}
           </div>
 
-          {/* Transparent Status Timeline */}
-          <ReportTimeline
-            report={report}
-            onStatusUpdated={(updated) => setReport(updated)}
-          />
+          {!ai ? (
+            <div className="text-center py-6 space-y-2">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#225332] border-t-transparent mx-auto" />
+              <p className="text-xs text-[#5c685f]">
+                Menyiapkan antrean analisis AI...
+              </p>
+            </div>
+          ) : ai.status === "processing" || ai.status === "pending" ? (
+            <div className="rounded-xl bg-[#fafaf7] p-4 border border-[#e2e6df] text-xs text-[#5c685f] flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#225332] border-t-transparent shrink-0" />
+                <span>
+                  Analisis AI sedang diproses secara asinkron ({ai.status === "pending" ? "menunggu antrean" : "menganalisis bukti & konteks"})...
+                </span>
+              </div>
+              <span className="text-[10px] text-[#8c978f] hidden sm:inline">Memperbarui otomatis</span>
+            </div>
+          ) : ai.status === "failed" ? (
+            <div className="rounded-xl bg-[#fef3c7] p-4 border border-[#fde68a] text-xs text-[#b45309] space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="font-medium">
+                  Analisis AI otomatis belum berhasil diselesaikan pada percobaan ini.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleRetryAi}
+                  disabled={isRetryingAi}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#225332] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#173722] transition disabled:opacity-50"
+                >
+                  <span>{isRetryingAi ? "Menjadwalkan..." : "Ulangi Analisis AI"}</span>
+                </button>
+              </div>
+              <p className="text-[11px] text-[#b45309]">
+                Laporan Anda tetap valid dan tersimpan aman. Tim penanganan tetap dapat memproses laporan ini.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {ai.summary && (
+                <div className="space-y-1">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-[#8c978f]">
+                    Ringkasan Fakta Masalah
+                  </h3>
+                  <p className="text-sm font-medium text-[#1c241e] leading-relaxed">
+                    {ai.summary}
+                  </p>
+                </div>
+              )}
 
-          {/* Community Discussion & Replies Thread */}
-          <ReportComments
-            reportId={report.id}
-            initialCommentsCount={report.comments_count || 0}
-          />
+              {ai.analysis && (
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAiDetail(!showAiDetail)}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-[#225332] hover:underline"
+                  >
+                    <span>{showAiDetail ? "Sembunyikan Penjelasan Dampak" : "Lihat Penjelasan Dampak & Rekomendasi"}</span>
+                    {showAiDetail ? <IconChevronUp className="h-3.5 w-3.5" /> : <IconChevronDown className="h-3.5 w-3.5" />}
+                  </button>
 
-          {/* Citizen Moderation Flag Modal */}
-          <FlagReportModal
-            reportId={report.id}
-            isOpen={flagModalOpen}
-            onClose={() => setFlagModalOpen(false)}
-          />
+                  {showAiDetail && (
+                    <div className="rounded-xl bg-[#fafaf7] border border-[#e2e6df] p-4 text-xs text-[#5c685f] leading-relaxed whitespace-pre-line animate-in fade-in duration-150">
+                      {ai.analysis}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-[#edf0ea] text-[11px] text-[#8c978f]">
+                {ai.confidence !== null && ai.confidence !== undefined && (
+                  <span>
+                    Tingkat Keyakinan Model: <strong className="text-[#1c241e]">{(ai.confidence * 100).toFixed(0)}%</strong>
+                  </span>
+                )}
+                {report.media && report.media.length > 0 && (
+                  <span>
+                    Bukti Dianalisis: <strong className="text-[#1c241e]">{Math.min(report.media.length, 3)} Foto</strong>
+                  </span>
+                )}
+                <span>
+                  Status AI: <strong className="text-[#15803d] capitalize">{ai.status}</strong>
+                </span>
+              </div>
+            </div>
+          )}
         </div>
-      </main>
 
-      {/* Footer */}
-      <footer className="border-t border-[#eae2d3] py-6 text-center text-xs text-[#8c857e] mt-auto">
-        <div className="mx-auto max-w-5xl px-6">
-          CiviLens &bull; Platform Pelaporan Lingkungan Warga
-        </div>
-      </footer>
-    </div>
+        {/* 3. GOVERNMENT RESOLUTION TIMELINE */}
+        <ReportTimeline
+          report={report}
+          onStatusUpdated={(updated) => setReport(updated)}
+        />
+
+        {/* 4. COMMUNITY DISCUSSION & REPLIES THREAD */}
+        <ReportComments
+          reportId={report.id}
+          initialCommentsCount={report.comments_count || 0}
+        />
+
+        {/* Citizen Moderation Flag Modal */}
+        <FlagReportModal
+          reportId={report.id}
+          isOpen={flagModalOpen}
+          onClose={() => setFlagModalOpen(false)}
+        />
+      </div>
+    </AuthenticatedShell>
   );
 }

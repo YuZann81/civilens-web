@@ -11,6 +11,7 @@ import { Report, InAppNotification, UserProfile } from "@/lib/api/types";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
+  usePathname: () => "/reports",
   useParams: () => ({ id: "101" }),
   useSearchParams: () => ({ get: () => null }),
 }));

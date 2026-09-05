@@ -4,7 +4,13 @@ import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/auth-context";
-import { getReports, getTopics, getTrendingTopics, toggleReportReaction, toggleReportBookmark } from "@/lib/api/client";
+import {
+  getReports,
+  getTopics,
+  getTrendingTopics,
+  toggleReportReaction,
+  toggleReportBookmark,
+} from "@/lib/api/client";
 import { Report, Topic } from "@/lib/api/types";
 import {
   IconPin,
@@ -16,46 +22,46 @@ import {
   IconShield,
   IconChevronDown,
   IconChevronUp,
-  IconUser,
-  IconBell,
   IconArrowRight,
   IconCamera,
-  IconDocument,
 } from "@/components/ui/icons";
 import { FeedReportSkeleton, TrendingWidgetSkeleton } from "@/components/ui/skeletons";
+import { AuthenticatedShell } from "@/components/layout/authenticated-shell";
 
 function getStatusBadge(status: string) {
   switch (status) {
     case "resolved":
     case "selesai":
-      return { label: "Selesai", bg: "bg-[#eef8f0] text-[#1e4d2b] border-[#c0e4c7]" };
+      return { label: "Selesai", bg: "bg-[#edf7ed] text-[#15803d] border-[#bbf7d0]" };
     case "in_progress":
-      return { label: "Ditindaklanjuti", bg: "bg-[#f2eef8] text-[#4a2e80] border-[#d8cde9]" };
+    case "ditindaklanjuti":
+      return { label: "Ditindaklanjuti", bg: "bg-[#f5f3ff] text-[#6d28d9] border-[#ddd6fe]" };
     case "verified":
-      return { label: "Terverifikasi", bg: "bg-[#edf7f7] text-[#1b5e5e] border-[#bfe2e2]" };
+    case "terverifikasi":
+      return { label: "Terverifikasi", bg: "bg-[#f0fdfa] text-[#0f766e] border-[#99f6e4]" };
     case "under_review":
     case "diproses":
-      return { label: "Peninjauan", bg: "bg-[#eef4f9] text-[#1a4b75] border-[#c3d9ec]" };
+      return { label: "Peninjauan", bg: "bg-[#eff6ff] text-[#1d4ed8] border-[#bfdbfe]" };
     case "rejected":
     case "ditolak":
-      return { label: "Ditolak", bg: "bg-[#fbeeed] text-[#8a241b] border-[#f2c2be]" };
+      return { label: "Ditolak", bg: "bg-[#fee2e2] text-[#b91c1c] border-[#fecaca]" };
     case "pending":
     default:
-      return { label: "Menunggu", bg: "bg-[#fcf5e8] text-[#7a4400] border-[#ecd5af]" };
+      return { label: "Menunggu", bg: "bg-[#fef3c7] text-[#b45309] border-[#fde68a]" };
   }
 }
 
 function getSeverityBadge(severity?: string | null) {
   switch (severity) {
     case "critical":
-      return { label: "KRITIS", bg: "bg-[#8a241b] text-white border-[#8a241b]" };
+      return { label: "Kritis", bg: "bg-[#fee2e2] text-[#b91c1c] border-[#fecaca]" };
     case "high":
-      return { label: "TINGGI", bg: "bg-[#ba4c08] text-white border-[#ba4c08]" };
+      return { label: "Tinggi", bg: "bg-[#ffedd5] text-[#c2410c] border-[#fed7aa]" };
     case "medium":
-      return { label: "SEDANG", bg: "bg-[#c57d11] text-white border-[#c57d11]" };
+      return { label: "Sedang", bg: "bg-[#fef3c7] text-[#b45309] border-[#fde68a]" };
     case "low":
     default:
-      return { label: "RENDAH", bg: "bg-[#2d6a36] text-white border-[#2d6a36]" };
+      return { label: "Rendah", bg: "bg-[#edf7ed] text-[#15803d] border-[#bbf7d0]" };
   }
 }
 
@@ -67,15 +73,15 @@ function ReportMediaGallery({ media }: { media?: Report["media"] }) {
   if (count === 1) {
     const item = media[0];
     return (
-      <div className="overflow-hidden rounded-xl border border-[#eae2d3] bg-[#f4f7f2]">
-        <div className="flex h-56 sm:h-72 w-full flex-col items-center justify-center p-6 text-center bg-gradient-to-br from-[#fafaf5] to-[#edf4eb]">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e5f0e6] text-[#1e4d2b]">
-            <IconCamera className="h-6 w-6" />
+      <div className="overflow-hidden rounded-xl border border-[#e2e6df] bg-[#fafaf7]">
+        <div className="flex h-48 sm:h-64 w-full flex-col items-center justify-center p-5 text-center bg-[#f4f5f0]">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e2ede4] text-[#225332]">
+            <IconCamera className="h-5 w-5" />
           </div>
-          <p className="mt-3 text-sm font-semibold text-[#1c4123] truncate max-w-sm">
+          <p className="mt-2 text-xs sm:text-sm font-semibold text-[#1c241e] truncate max-w-sm">
             {item.original_name}
           </p>
-          <p className="mt-1 text-xs text-[#7a9a80]">
+          <p className="mt-0.5 text-[11px] text-[#8c978f]">
             Dokumentasi Bukti Lapangan &bull; {(item.size / 1024).toFixed(0)} KB
           </p>
         </div>
@@ -85,19 +91,19 @@ function ReportMediaGallery({ media }: { media?: Report["media"] }) {
 
   if (count === 2) {
     return (
-      <div className="grid grid-cols-2 gap-2 overflow-hidden rounded-xl border border-[#eae2d3]">
+      <div className="grid grid-cols-2 gap-2 overflow-hidden rounded-xl">
         {media.slice(0, 2).map((item, idx) => (
           <div
             key={item.id || idx}
-            className="flex h-44 sm:h-52 flex-col items-center justify-center p-4 text-center bg-[#f4f7f2]"
+            className="flex h-36 sm:h-44 flex-col items-center justify-center p-3 text-center border border-[#e2e6df] rounded-xl bg-[#f4f5f0]"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#e5f0e6] text-[#1e4d2b]">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#e2ede4] text-[#225332]">
               <IconCamera className="h-4 w-4" />
             </div>
-            <p className="mt-2 text-xs font-semibold text-[#1c4123] truncate max-w-[150px]">
+            <p className="mt-1.5 text-xs font-semibold text-[#1c241e] truncate max-w-[140px]">
               {item.original_name}
             </p>
-            <p className="mt-0.5 text-[11px] text-[#7a9a80]">
+            <p className="mt-0.5 text-[10px] text-[#8c978f]">
               Foto {idx + 1} &bull; {(item.size / 1024).toFixed(0)} KB
             </p>
           </div>
@@ -106,17 +112,16 @@ function ReportMediaGallery({ media }: { media?: Report["media"] }) {
     );
   }
 
-  // 3 or more photos (2 columns with 1 large left and 2 stacked right)
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 overflow-hidden rounded-xl border border-[#eae2d3]">
-      <div className="sm:col-span-2 flex h-48 sm:h-64 flex-col items-center justify-center p-6 text-center bg-[#f4f7f2]">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e5f0e6] text-[#1e4d2b]">
-          <IconCamera className="h-5 w-5" />
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 overflow-hidden rounded-xl">
+      <div className="sm:col-span-2 flex h-40 sm:h-52 flex-col items-center justify-center p-4 text-center border border-[#e2e6df] rounded-xl bg-[#f4f5f0]">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#e2ede4] text-[#225332]">
+          <IconCamera className="h-4 w-4" />
         </div>
-        <p className="mt-2 text-xs sm:text-sm font-semibold text-[#1c4123] truncate max-w-[220px]">
+        <p className="mt-1.5 text-xs sm:text-sm font-semibold text-[#1c241e] truncate max-w-[200px]">
           {media[0].original_name}
         </p>
-        <p className="mt-0.5 text-xs text-[#7a9a80]">
+        <p className="mt-0.5 text-[11px] text-[#8c978f]">
           Bukti Utama &bull; {(media[0].size / 1024).toFixed(0)} KB
         </p>
       </div>
@@ -125,15 +130,15 @@ function ReportMediaGallery({ media }: { media?: Report["media"] }) {
         {media.slice(1, 3).map((item, idx) => (
           <div
             key={item.id || idx}
-            className="flex h-24 sm:h-31 flex-col items-center justify-center p-3 text-center bg-[#fafaf5]"
+            className="flex h-20 sm:h-24 flex-col items-center justify-center p-2 text-center border border-[#e2e6df] rounded-xl bg-[#fafaf7]"
           >
-            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#e5f0e6] text-[#1e4d2b]">
+            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#e2ede4] text-[#225332]">
               <IconCamera className="h-3.5 w-3.5" />
             </div>
-            <p className="mt-1 text-[11px] font-medium text-[#1c4123] truncate max-w-[120px]">
+            <p className="mt-1 text-[11px] font-medium text-[#1c241e] truncate max-w-[110px]">
               {item.original_name}
             </p>
-            <p className="text-[10px] text-[#7a9a80]">
+            <p className="text-[10px] text-[#8c978f]">
               {(item.size / 1024).toFixed(0)} KB
             </p>
           </div>
@@ -162,20 +167,20 @@ function ReportFeedCard({
     : report.category ? [{ id: 0, name: report.category.name, slug: report.category.slug }] : [];
 
   return (
-    <article className="rounded-2xl border border-[#eae2d3] bg-white p-5 sm:p-6 shadow-xs hover:border-[#c8dfc8] transition-colors">
-      {/* Header: Citizen Author Identity & Status */}
-      <div className="flex items-start justify-between gap-3 border-b border-[#f2ede4] pb-3">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#1e4d2b] text-white font-bold text-xs font-serif shrink-0">
+    <article className="rounded-2xl border border-[#e2e6df] bg-white p-5 sm:p-6 shadow-xs hover:border-[#225332]/40 transition space-y-4">
+      {/* 1. Header: Author & Status */}
+      <div className="flex items-start justify-between gap-3 border-b border-[#edf0ea] pb-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f2f7f3] text-[#225332] font-bold text-xs shrink-0 border border-[#c5dcce]">
             {report.author?.name ? report.author.name.charAt(0).toUpperCase() : "W"}
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs sm:text-sm font-bold text-[#17361d]">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs sm:text-sm font-semibold text-[#1c241e] truncate">
                 {report.author?.name || "Warga Komunitas"}
               </span>
-              <span className="text-xs text-[#8c857e]">&bull;</span>
-              <time className="text-xs text-[#7a9a80]">
+              <span className="text-xs text-[#8c978f]">&bull;</span>
+              <time className="text-xs text-[#8c978f] whitespace-nowrap">
                 {new Date(report.created_at).toLocaleDateString("id-ID", {
                   day: "numeric",
                   month: "short",
@@ -184,109 +189,104 @@ function ReportFeedCard({
               </time>
             </div>
             {report.location && (
-              <p className="mt-0.5 text-xs text-[#4a6b52] flex items-center gap-1 font-medium">
-                <IconPin className="h-3.5 w-3.5 text-[#1e4d2b] shrink-0" />
-                <span className="truncate max-w-[220px] sm:max-w-md">{report.location.address}</span>
+              <p className="text-xs text-[#5c685f] flex items-center gap-1 pt-0.5 truncate">
+                <IconPin className="h-3 w-3 text-[#225332] shrink-0" />
+                <span className="truncate">{report.location.address}</span>
               </p>
             )}
           </div>
         </div>
 
-        {/* Official Status */}
-        <span className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold ${statusBadge.bg}`}>
+        {/* Status indicator on top right */}
+        <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusBadge.bg}`}>
           {statusBadge.label}
         </span>
       </div>
 
-      {/* Report Body: Title & Context */}
-      <div className="mt-4 space-y-2.5">
-        <Link href={`/reports/${report.id}`} className="group block space-y-1.5">
-          <h2
-            className="text-base sm:text-lg font-bold text-[#17361d] group-hover:text-[#1e4d2b] transition-colors leading-snug"
-            style={{ fontFamily: "Georgia, serif" }}
-          >
+      {/* 2. Content: Title & Description */}
+      <div className="space-y-2">
+        <Link href={`/reports/${report.id}`} className="group block space-y-1">
+          <h2 className="text-base sm:text-lg font-bold text-[#1c241e] group-hover:text-[#225332] transition leading-snug">
             {report.title}
           </h2>
-          <p className="text-xs sm:text-sm text-[#4a4642] leading-relaxed">
+          <p className="text-xs sm:text-sm text-[#5c685f] line-clamp-3 leading-relaxed">
             {report.description}
           </p>
         </Link>
 
-        {/* Evidence Photos Gallery */}
+        {/* 3. Media Preview Gallery */}
         {report.media && report.media.length > 0 && (
-          <div className="pt-1.5">
+          <div className="pt-1">
             <ReportMediaGallery media={report.media} />
           </div>
         )}
       </div>
 
-      {/* Topic Tags */}
-      {displayTopics.length > 0 && (
-        <div className="mt-3.5 flex flex-wrap items-center gap-1.5">
-          {displayTopics.map((t, idx) => (
-            <Link
-              key={idx}
-              href={`/reports?topic=${t.slug}`}
-              className="rounded-full bg-[#f4f7f2] border border-[#d6e4d4] px-2.5 py-0.5 text-xs font-medium text-[#1e4d2b] hover:bg-[#e5f0e6] transition-colors"
-            >
-              #{t.name}
-            </Link>
-          ))}
-        </div>
-      )}
+      {/* 4. Metadata: Topics & Severity */}
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+        {displayTopics.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            {displayTopics.map((t, idx) => (
+              <Link
+                key={idx}
+                href={`/reports?topic=${t.slug}`}
+                className="rounded-full bg-[#f4f5f0] border border-[#e2e6df] px-2.5 py-0.5 text-[11px] font-medium text-[#5c685f] hover:bg-[#e2ede4] hover:text-[#225332] transition"
+              >
+                #{t.name}
+              </Link>
+            ))}
+          </div>
+        )}
 
-      {/* Analisis CiviLens (Clean, Editorial, Non-Chatbot) */}
-      {ai && (
-        <div className="mt-4 rounded-xl border border-[#d6e4d4] bg-[#f4f7f2] p-4 text-xs space-y-2.5">
+        {ai?.severity && (
+          <span className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${severityBadge.bg}`}>
+            Keparahan: {severityBadge.label}
+          </span>
+        )}
+      </div>
+
+      {/* 5. Supporting AI Signal (Clean & Non-Dominant) */}
+      {ai && ai.summary && (
+        <div className="rounded-xl border border-[#e2e6df] bg-[#fafaf7] p-3.5 text-xs space-y-1.5">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="font-bold tracking-wider uppercase text-[#1e4d2b]">
-                Analisis CiviLens
-              </span>
-              {ai.severity && (
-                <span className={`rounded-sm border px-1.5 py-0.2 text-[10px] font-bold ${severityBadge.bg}`}>
-                  {severityBadge.label}
-                </span>
-              )}
-            </div>
-
+            <span className="font-semibold text-[#225332] text-[11px] uppercase tracking-wider">
+              Ringkasan Analisis AI
+            </span>
             {ai.analysis && (
               <button
                 type="button"
                 onClick={() => setShowAiDetail(!showAiDetail)}
-                className="font-semibold text-[#1e4d2b] hover:underline flex items-center gap-1 text-[11px]"
+                className="font-medium text-[#225332] hover:underline flex items-center gap-1 text-[11px]"
               >
-                <span>{showAiDetail ? "Sembunyikan" : "Penjelasan Dampak"}</span>
+                <span>{showAiDetail ? "Sembunyikan" : "Detail Dampak"}</span>
                 {showAiDetail ? <IconChevronUp className="h-3 w-3" /> : <IconChevronDown className="h-3 w-3" />}
               </button>
             )}
           </div>
 
-          {ai.summary && (
-            <p className="text-xs font-medium text-[#2c2926] leading-relaxed">
-              {ai.summary}
-            </p>
-          )}
+          <p className="text-xs text-[#1c241e] leading-relaxed">
+            {ai.summary}
+          </p>
 
           {showAiDetail && ai.analysis && (
-            <div className="pt-2 border-t border-[#d6e4d4] text-xs text-[#57524d] leading-relaxed whitespace-pre-line">
+            <div className="pt-2 border-t border-[#e2e6df] text-xs text-[#5c685f] leading-relaxed whitespace-pre-line">
               {ai.analysis}
             </div>
           )}
         </div>
       )}
 
-      {/* Civic Action Footer */}
-      <div className="mt-4 flex items-center justify-between border-t border-[#f2ede4] pt-3 text-xs">
+      {/* 6. Civic Action Footer */}
+      <div className="flex items-center justify-between border-t border-[#edf0ea] pt-3 text-xs">
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => onReactionToggle(report.id)}
             aria-label={`Dukung laporan (${report.reactions_count || 0})`}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-semibold transition-colors ${
+            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-semibold transition ${
               report.user_reacted
-                ? "bg-[#1e4d2b] text-white"
-                : "bg-[#fafaf5] text-[#57524d] border border-[#eae2d3] hover:bg-[#f4f7f2]"
+                ? "bg-[#225332] text-white"
+                : "bg-[#fafaf7] text-[#5c685f] border border-[#e2e6df] hover:bg-[#f4f5f0] hover:text-[#1c241e]"
             }`}
           >
             <IconThumbsUp className="h-3.5 w-3.5" />
@@ -296,7 +296,7 @@ function ReportFeedCard({
           <Link
             href={`/reports/${report.id}`}
             aria-label={`Lihat komentar (${report.comments_count || 0})`}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[#fafaf5] px-3 py-1.5 font-semibold text-[#57524d] border border-[#eae2d3] hover:bg-[#f4f7f2] transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[#fafaf7] px-3 py-1.5 font-semibold text-[#5c685f] border border-[#e2e6df] hover:bg-[#f4f5f0] hover:text-[#1c241e] transition"
           >
             <IconMessage className="h-3.5 w-3.5" />
             <span>{report.comments_count || 0}</span>
@@ -306,10 +306,10 @@ function ReportFeedCard({
             type="button"
             onClick={() => onBookmarkToggle(report.id)}
             aria-label={report.user_bookmarked ? "Hapus dari simpanan" : "Simpan laporan"}
-            className={`inline-flex items-center gap-1.5 rounded-lg p-2 font-semibold transition-colors ${
+            className={`inline-flex items-center gap-1.5 rounded-lg p-2 font-semibold transition ${
               report.user_bookmarked
-                ? "bg-[#7a4400] text-white"
-                : "bg-[#fafaf5] text-[#57524d] border border-[#eae2d3] hover:bg-[#f4f7f2]"
+                ? "bg-[#b45309] text-white"
+                : "bg-[#fafaf7] text-[#5c685f] border border-[#e2e6df] hover:bg-[#f4f5f0] hover:text-[#1c241e]"
             }`}
           >
             <IconBookmark className="h-3.5 w-3.5" />
@@ -318,7 +318,7 @@ function ReportFeedCard({
 
         <Link
           href={`/reports/${report.id}`}
-          className="inline-flex items-center gap-1 font-semibold text-[#1e4d2b] hover:underline"
+          className="inline-flex items-center gap-1 font-semibold text-[#225332] hover:underline"
         >
           <span>Detail Lengkap</span>
           <IconArrowRight className="h-3 w-3" />
@@ -330,7 +330,7 @@ function ReportFeedCard({
 
 function ReportsFeedContent() {
   const router = useRouter();
-  const { user, status, logout } = useAuth();
+  const { user } = useAuth();
   const searchParams = useSearchParams();
 
   const urlTopic = searchParams.get("topic") || "";
@@ -353,13 +353,7 @@ function ReportsFeedContent() {
   const [selectedSeverity, setSelectedSeverity] = useState<string>("");
   const [selectedSort, setSelectedSort] = useState<string>("created_at");
 
-  // Debounce search input
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedQuery(searchInput);
-    }, 400);
-    return () => clearTimeout(handler);
-  }, [searchInput]);
+  const [reloadTrigger, setReloadTrigger] = useState(0);
 
   // Initial topics and trending load
   useEffect(() => {
@@ -371,7 +365,7 @@ function ReportsFeedContent() {
       .catch(() => {});
   }, []);
 
-  // Fetch reports when filters or tabs change
+  // Fetch reports when filters, tabs, or retry changes
   useEffect(() => {
     let mounted = true;
 
@@ -403,7 +397,7 @@ function ReportsFeedContent() {
     return () => {
       mounted = false;
     };
-  }, [debouncedQuery, selectedTopic, selectedStatus, selectedSeverity, selectedSort, activeTab]);
+  }, [debouncedQuery, selectedTopic, selectedStatus, selectedSeverity, selectedSort, activeTab, reloadTrigger]);
 
   const handleToggleReaction = async (reportId: number) => {
     if (!user) {
@@ -441,168 +435,48 @@ function ReportsFeedContent() {
     } catch {}
   };
 
+  const handleResetFilters = () => {
+    setSelectedTopic("");
+    setSelectedStatus("");
+    setSelectedSeverity("");
+    setSelectedSort("created_at");
+    setSearchInput("");
+    setDebouncedQuery("");
+  };
+
   return (
-    <div className="min-h-screen bg-[#fafaf5] text-[#2c2926] pb-20 lg:pb-10">
-      {/* Top Navbar */}
-      <header className="sticky top-0 z-30 border-b border-[#eae2d3] bg-[#fafaf5]/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 py-3">
-          <Link href="/reports" className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#1e4d2b] text-white font-bold font-serif text-sm">
-              C
-            </div>
-            <span className="text-xl font-bold tracking-tight text-[#1e4d2b] font-serif">
-              CiviLens
-            </span>
-          </Link>
-
-          {/* Desktop Search Header */}
-          <div className="hidden md:flex flex-1 max-w-md mx-6 relative">
-            <IconSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#7a9a80]" />
-            <input
-              type="text"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Cari laporan, topik, atau wilayah..."
-              className="w-full rounded-full border border-[#c8dfc8] bg-white pl-9 pr-4 py-1.5 text-xs text-[#2c2926] outline-none focus:border-[#1e4d2b] shadow-2xs"
-            />
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link
-              href="/reports/create"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#1e4d2b] px-4 py-2 text-xs font-semibold text-white hover:bg-[#163a20] transition-colors shadow-xs"
-            >
-              <span>+ Buat Laporan</span>
-            </Link>
-
-            {status === "authenticated" && user ? (
-              <div className="flex items-center gap-2">
-                <Link
-                  href={`/users/${user.id}`}
-                  className="hidden sm:block text-xs font-semibold text-[#1e4d2b] hover:underline"
-                >
-                  {user.name}
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => void logout()}
-                  className="rounded-lg border border-[#cbe0ce] bg-white px-2.5 py-1 text-xs font-semibold text-[#57524d] hover:bg-[#fafaf5]"
-                >
-                  Keluar
-                </button>
-              </div>
-            ) : (
-              <Link
-                href="/login"
-                className="rounded-lg border border-[#cbe0ce] bg-white px-3 py-1.5 text-xs font-semibold text-[#1e4d2b] hover:bg-[#f4f7f2]"
-              >
-                Masuk
-              </Link>
-            )}
-          </div>
-        </div>
-      </header>
-
-      {/* Main Layout: 3-column proportional grid (1280-1360px max-width) */}
-      <div className="mx-auto max-w-[1360px] px-4 sm:px-6 py-5 flex flex-col lg:flex-row gap-6 items-start">
-        {/* LEFT COLUMN: Sidebar Navigation (~240px) */}
-        <aside className="hidden lg:block w-[240px] shrink-0 space-y-4">
-          <div className="sticky top-20 rounded-2xl border border-[#eae2d3] bg-white p-4 shadow-xs space-y-3">
-            <nav className="space-y-1 text-xs font-semibold" aria-label="Navigasi Samping">
-              <Link
-                href="/reports"
-                className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 transition-colors ${
-                  !selectedTopic && activeTab === "all"
-                    ? "bg-[#e5f0e6] text-[#1e4d2b]"
-                    : "text-[#57524d] hover:bg-[#fafaf5]"
-                }`}
-              >
-                <IconDocument className="h-4 w-4 shrink-0" />
-                <span>Feed Utama</span>
-              </Link>
-              <Link
-                href="/reports/create"
-                className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[#57524d] hover:bg-[#fafaf5] transition-colors"
-              >
-                <IconCamera className="h-4 w-4 shrink-0" />
-                <span>Buat Laporan</span>
-              </Link>
-              {user && (
-                <>
-                  <Link
-                    href="/bookmarks"
-                    className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[#57524d] hover:bg-[#fafaf5] transition-colors"
-                  >
-                    <IconBookmark className="h-4 w-4 shrink-0" />
-                    <span>Laporan Tersimpan</span>
-                  </Link>
-                  <Link
-                    href="/notifications"
-                    className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[#57524d] hover:bg-[#fafaf5] transition-colors"
-                  >
-                    <IconBell className="h-4 w-4 shrink-0" />
-                    <span>Pusat Notifikasi</span>
-                  </Link>
-                  <Link
-                    href={`/users/${user.id}`}
-                    className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[#57524d] hover:bg-[#fafaf5] transition-colors"
-                  >
-                    <IconUser className="h-4 w-4 shrink-0" />
-                    <span>Profil Publik</span>
-                  </Link>
-                  {(user.role === "government" || user.role === "admin") && (
-                    <Link
-                      href="/government"
-                      className="flex items-center gap-2 rounded-xl bg-[#1e4d2b] px-3 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#163a20] transition-colors mt-2"
-                    >
-                      <IconShield className="h-3.5 w-3.5 shrink-0" />
-                      <span>Portal Instansi</span>
-                    </Link>
-                  )}
-                </>
-              )}
-            </nav>
-
-            <div className="pt-2 border-t border-[#f2ede4]">
-              <Link
-                href="/reports/create"
-                className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-[#1e4d2b] py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-[#163a20] transition-colors"
-              >
-                <span>+ Buat Laporan</span>
-              </Link>
-            </div>
-          </div>
-        </aside>
-
-        {/* CENTER COLUMN: Main Report Stream (~680-720px) */}
-        <main className="w-full lg:max-w-[720px] flex-1 space-y-4">
+    <AuthenticatedShell showSidebar={true} maxWidth="default">
+      {/* 2-column proportional grid (Center Stream + Right Discovery Widget) */}
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
+        {/* CENTER COLUMN: Main Report Stream */}
+        <div className="w-full lg:max-w-[720px] flex-1 space-y-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold font-serif text-[#1e4d2b]" style={{ fontFamily: "Georgia, serif" }}>
+            <h1 className="text-xl font-bold tracking-tight text-[#1c241e]">
               Feed Laporan Lingkungan
             </h1>
           </div>
 
           {/* Mobile Search Bar */}
           <div className="block md:hidden relative">
-            <IconSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#7a9a80]" />
+            <IconSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#8c978f]" />
             <input
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Cari laporan, topik, atau wilayah..."
-              className="w-full rounded-xl border border-[#c8dfc8] bg-white pl-9 pr-4 py-2 text-xs text-[#2c2926] outline-none focus:border-[#1e4d2b] shadow-2xs"
+              className="w-full rounded-xl border border-[#e2e6df] bg-white pl-9 pr-4 py-2 text-xs text-[#1c241e] placeholder-[#8c978f] outline-none focus:border-[#225332] shadow-2xs"
             />
           </div>
 
           {/* Feed Tab Layer */}
-          <div className="flex items-center border-b border-[#eae2d3] bg-white rounded-xl px-3 pt-2 shadow-2xs">
+          <div className="flex items-center border-b border-[#e2e6df] bg-white rounded-xl px-3 pt-2 shadow-2xs">
             <button
               type="button"
               onClick={() => setActiveTab("all")}
-              className={`flex-1 pb-2.5 text-xs font-bold text-center border-b-2 transition-colors ${
+              className={`flex-1 pb-2.5 text-xs font-bold text-center border-b-2 transition ${
                 activeTab === "all"
-                  ? "border-[#1e4d2b] text-[#1e4d2b]"
-                  : "border-transparent text-[#7a9a80] hover:text-[#2c2926]"
+                  ? "border-[#225332] text-[#225332]"
+                  : "border-transparent text-[#5c685f] hover:text-[#1c241e]"
               }`}
             >
               Semua Laporan
@@ -611,10 +485,10 @@ function ReportsFeedContent() {
               <button
                 type="button"
                 onClick={() => setActiveTab("mine")}
-                className={`flex-1 pb-2.5 text-xs font-bold text-center border-b-2 transition-colors ${
+                className={`flex-1 pb-2.5 text-xs font-bold text-center border-b-2 transition ${
                   activeTab === "mine"
-                    ? "border-[#1e4d2b] text-[#1e4d2b]"
-                    : "border-transparent text-[#7a9a80] hover:text-[#2c2926]"
+                    ? "border-[#225332] text-[#225332]"
+                    : "border-transparent text-[#5c685f] hover:text-[#1c241e]"
                 }`}
               >
                 Laporan Saya
@@ -627,10 +501,10 @@ function ReportsFeedContent() {
             <button
               type="button"
               onClick={() => setSelectedTopic("")}
-              className={`shrink-0 rounded-full px-3 py-1 font-semibold transition-colors ${
+              className={`shrink-0 rounded-full px-3 py-1 font-semibold transition ${
                 selectedTopic === ""
-                  ? "bg-[#1e4d2b] text-white"
-                  : "bg-white text-[#57524d] border border-[#eae2d3] hover:bg-[#fafaf5]"
+                  ? "bg-[#225332] text-white"
+                  : "bg-white text-[#5c685f] border border-[#e2e6df] hover:bg-[#fafaf7] hover:text-[#1c241e]"
               }`}
             >
               Semua Topik
@@ -640,10 +514,10 @@ function ReportsFeedContent() {
                 key={t.id}
                 type="button"
                 onClick={() => setSelectedTopic(t.slug === selectedTopic ? "" : t.slug)}
-                className={`shrink-0 rounded-full px-3 py-1 font-semibold transition-colors ${
+                className={`shrink-0 rounded-full px-3 py-1 font-semibold transition ${
                   selectedTopic === t.slug
-                    ? "bg-[#1e4d2b] text-white"
-                    : "bg-white text-[#57524d] border border-[#eae2d3] hover:bg-[#fafaf5]"
+                    ? "bg-[#225332] text-white"
+                    : "bg-white text-[#5c685f] border border-[#e2e6df] hover:bg-[#fafaf7] hover:text-[#1c241e]"
                 }`}
               >
                 #{t.name}
@@ -652,14 +526,14 @@ function ReportsFeedContent() {
           </div>
 
           {/* Filter & Sorting Controls */}
-          <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl bg-white border border-[#eae2d3] shadow-xs text-xs">
+          <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl bg-white border border-[#e2e6df] shadow-xs text-xs">
             <div className="flex flex-wrap items-center gap-2">
               <div className="flex items-center gap-1.5">
-                <span className="font-semibold text-[#1c4123]">Status:</span>
+                <span className="font-semibold text-[#1c241e]">Status:</span>
                 <select
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="rounded-lg border border-[#cbe0ce] bg-[#fafaf5] px-2 py-1 text-xs text-[#2c2926] outline-none"
+                  className="rounded-lg border border-[#e2e6df] bg-[#fafaf7] px-2 py-1 text-xs text-[#1c241e] outline-none focus:border-[#225332]"
                 >
                   <option value="">Semua</option>
                   <option value="pending">Menunggu</option>
@@ -672,11 +546,11 @@ function ReportsFeedContent() {
               </div>
 
               <div className="flex items-center gap-1.5">
-                <span className="font-semibold text-[#1c4123]">Keparahan:</span>
+                <span className="font-semibold text-[#1c241e]">Keparahan:</span>
                 <select
                   value={selectedSeverity}
                   onChange={(e) => setSelectedSeverity(e.target.value)}
-                  className="rounded-lg border border-[#cbe0ce] bg-[#fafaf5] px-2 py-1 text-xs text-[#2c2926] outline-none"
+                  className="rounded-lg border border-[#e2e6df] bg-[#fafaf7] px-2 py-1 text-xs text-[#1c241e] outline-none focus:border-[#225332]"
                 >
                   <option value="">Semua</option>
                   <option value="critical">Kritis</option>
@@ -688,11 +562,11 @@ function ReportsFeedContent() {
             </div>
 
             <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-[#1c4123]">Urutan:</span>
+              <span className="font-semibold text-[#1c241e]">Urutan:</span>
               <select
                 value={selectedSort}
                 onChange={(e) => setSelectedSort(e.target.value)}
-                className="rounded-lg border border-[#cbe0ce] bg-[#fafaf5] px-2.5 py-1 text-xs text-[#2c2926] outline-none"
+                className="rounded-lg border border-[#e2e6df] bg-[#fafaf7] px-2.5 py-1 text-xs text-[#1c241e] outline-none focus:border-[#225332]"
               >
                 <option value="created_at">Terbaru</option>
                 <option value="reactions_count">Dukungan Warga</option>
@@ -701,10 +575,17 @@ function ReportsFeedContent() {
             </div>
           </div>
 
-          {/* Error Message */}
+          {/* Error Message with Retry */}
           {error && (
-            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-xs text-red-700">
-              {error}
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-xs text-red-700 flex items-center justify-between gap-3">
+              <span>{error}</span>
+              <button
+                type="button"
+                onClick={() => setReloadTrigger((prev) => prev + 1)}
+                className="font-semibold underline hover:text-red-900 shrink-0"
+              >
+                Coba Lagi
+              </button>
             </div>
           )}
 
@@ -718,23 +599,32 @@ function ReportsFeedContent() {
           ) : reports.length === 0 ? (
             <div className="space-y-4">
               {/* Compact Content-Driven Empty State Card */}
-              <div className="rounded-2xl border border-[#eae2d3] bg-white p-6 sm:p-7 text-center space-y-3 shadow-xs">
-                <h2 className="text-base font-bold text-[#1c4123]" style={{ fontFamily: "Georgia, serif" }}>
+              <div className="rounded-2xl border border-[#e2e6df] bg-white p-6 sm:p-7 text-center space-y-3 shadow-xs">
+                <h2 className="text-base font-bold text-[#1c241e]">
                   Belum ada laporan yang cocok
                 </h2>
                 {debouncedQuery ? (
-                  <p className="text-xs text-[#57524d] max-w-sm mx-auto">
-                    Tidak ditemukan laporan yang sesuai dengan kata kunci &ldquo;<strong className="text-[#1c4123]">{debouncedQuery}</strong>&rdquo;.
+                  <p className="text-xs text-[#5c685f] max-w-sm mx-auto">
+                    Tidak ditemukan laporan yang sesuai dengan kata kunci &ldquo;<strong className="text-[#1c241e]">{debouncedQuery}</strong>&rdquo;.
                   </p>
                 ) : (
-                  <p className="text-xs text-[#57524d] max-w-sm mx-auto">
+                  <p className="text-xs text-[#5c685f] max-w-sm mx-auto">
                     Belum ada laporan dengan filter yang dipilih saat ini.
                   </p>
                 )}
-                <div>
+                <div className="flex items-center justify-center gap-2 pt-1">
+                  {(debouncedQuery || selectedTopic || selectedStatus || selectedSeverity) && (
+                    <button
+                      type="button"
+                      onClick={handleResetFilters}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-[#e2e6df] bg-[#fafaf7] px-4 py-2 text-xs font-semibold text-[#1c241e] hover:bg-white transition shadow-xs"
+                    >
+                      Reset Filter
+                    </button>
+                  )}
                   <Link
                     href="/reports/create"
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-[#1e4d2b] px-4 py-2 text-xs font-semibold text-white hover:bg-[#163a20] transition-colors shadow-xs"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-[#225332] px-4 py-2 text-xs font-semibold text-white hover:bg-[#173722] transition shadow-xs"
                   >
                     <span>+ Buat Laporan Baru</span>
                   </Link>
@@ -743,8 +633,8 @@ function ReportsFeedContent() {
 
               {/* Discovery Section: Topics to Monitor */}
               {topics.length > 0 && (
-                <div className="rounded-2xl border border-[#eae2d3] bg-white p-5 shadow-xs space-y-3">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-[#1e4d2b]">
+                <div className="rounded-2xl border border-[#e2e6df] bg-white p-5 shadow-xs space-y-3">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-[#225332]">
                     Topik yang Bisa Kamu Pantau
                   </h3>
                   <div className="flex flex-wrap gap-1.5">
@@ -753,7 +643,7 @@ function ReportsFeedContent() {
                         key={top.id}
                         type="button"
                         onClick={() => setSelectedTopic(top.slug)}
-                        className="rounded-full border border-[#d6e4d4] bg-[#fafaf5] px-2.5 py-1 text-xs font-medium text-[#1e4d2b] hover:bg-[#e5f0e6] transition-colors"
+                        className="rounded-full border border-[#e2e6df] bg-[#fafaf7] px-2.5 py-1 text-xs font-medium text-[#1c241e] hover:bg-[#e2ede4] hover:text-[#225332] transition"
                       >
                         #{top.name}
                       </button>
@@ -763,21 +653,21 @@ function ReportsFeedContent() {
               )}
 
               {/* Information Section: Cara Kerja CiviLens */}
-              <div className="rounded-2xl border border-[#eae2d3] bg-white p-5 shadow-xs space-y-3">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-[#1e4d2b]">
+              <div className="rounded-2xl border border-[#e2e6df] bg-white p-5 shadow-xs space-y-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#225332]">
                   Cara Kerja CiviLens
                 </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-[#57524d]">
-                  <div className="p-3 rounded-xl bg-[#fafaf5] border border-[#f2ede4] space-y-1">
-                    <p className="font-bold text-[#1c4123]">1. Laporkan Masalah</p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-[#5c685f]">
+                  <div className="p-3 rounded-xl bg-[#fafaf7] border border-[#e2e6df] space-y-1">
+                    <p className="font-bold text-[#1c241e]">1. Laporkan Masalah</p>
                     <p className="leading-relaxed text-[11px]">Unggah foto bukti otentik dan tentukan lokasi kejadian.</p>
                   </div>
-                  <div className="p-3 rounded-xl bg-[#fafaf5] border border-[#f2ede4] space-y-1">
-                    <p className="font-bold text-[#1c4123]">2. CiviLens Menganalisis</p>
+                  <div className="p-3 rounded-xl bg-[#fafaf7] border border-[#e2e6df] space-y-1">
+                    <p className="font-bold text-[#1c241e]">2. CiviLens Menganalisis</p>
                     <p className="leading-relaxed text-[11px]">Sistem cerdas merangkum fakta dan tingkat keparahan masalah.</p>
                   </div>
-                  <div className="p-3 rounded-xl bg-[#fafaf5] border border-[#f2ede4] space-y-1">
-                    <p className="font-bold text-[#1c4123]">3. Ditindaklanjuti</p>
+                  <div className="p-3 rounded-xl bg-[#fafaf7] border border-[#e2e6df] space-y-1">
+                    <p className="font-bold text-[#1c241e]">3. Ditindaklanjuti</p>
                     <p className="leading-relaxed text-[11px]">Instansi memverifikasi dan memperbarui progres di linimasa.</p>
                   </div>
                 </div>
@@ -795,18 +685,18 @@ function ReportsFeedContent() {
               ))}
             </div>
           )}
-        </main>
+        </div>
 
         {/* RIGHT COLUMN: Discovery / Topic Aggregation (~300px) */}
         <aside className="hidden lg:block w-[300px] shrink-0 space-y-4">
           {/* Widget 1: Topik Paling Banyak Dilaporkan */}
-          <div className="rounded-2xl border border-[#eae2d3] bg-white p-4 shadow-xs space-y-3">
+          <div className="rounded-2xl border border-[#e2e6df] bg-white p-4 shadow-xs space-y-3">
             <div>
-              <h2 className="text-sm font-bold text-[#1e4d2b] flex items-center gap-1.5" style={{ fontFamily: "Georgia, serif" }}>
-                <IconHashtag className="h-4 w-4 text-[#7a4400]" />
+              <h2 className="text-sm font-bold text-[#1c241e] flex items-center gap-1.5">
+                <IconHashtag className="h-4 w-4 text-[#b45309]" />
                 <span>Topik Paling Banyak Dilaporkan</span>
               </h2>
-              <p className="text-[11px] text-[#7a9a80] mt-0.5">
+              <p className="text-[11px] text-[#8c978f] mt-0.5">
                 Akumulasi laporan warga pada topik aktif.
               </p>
             </div>
@@ -820,15 +710,15 @@ function ReportsFeedContent() {
                     key={item.id}
                     type="button"
                     onClick={() => setSelectedTopic(item.slug === selectedTopic ? "" : item.slug)}
-                    className={`w-full text-left px-3 py-2 rounded-xl border transition-colors ${
+                    className={`w-full text-left px-3 py-2 rounded-xl border transition ${
                       selectedTopic === item.slug
-                        ? "bg-[#e5f0e6] border-[#1e4d2b] text-[#1e4d2b]"
-                        : "bg-[#fafaf5] border-[#eae2d3] hover:border-[#c8dfc8] text-[#2c2926]"
+                        ? "bg-[#f2f7f3] border-[#225332] text-[#225332] font-semibold"
+                        : "bg-[#fafaf7] border-[#e2e6df] hover:border-[#8c978f] text-[#1c241e]"
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-[#1c4123]">#{item.name}</span>
-                      <span className="text-[10px] text-[#7a9a80]">
+                      <span className="text-xs font-bold">#{item.name}</span>
+                      <span className="text-[10px] text-[#8c978f]">
                         {item.reports_count !== undefined && item.reports_count > 0
                           ? `${item.reports_count} Laporan`
                           : "Topik Resmi"}
@@ -841,18 +731,18 @@ function ReportsFeedContent() {
           </div>
 
           {/* Widget 2: Panduan Partisipasi Sipil */}
-          <div className="rounded-2xl border border-[#eae2d3] bg-white p-4 shadow-xs space-y-2 text-xs">
-            <h3 className="font-bold text-[#1e4d2b] flex items-center gap-1.5">
-              <IconShield className="h-3.5 w-3.5 text-[#1e4d2b]" />
+          <div className="rounded-2xl border border-[#e2e6df] bg-white p-4 shadow-xs space-y-2 text-xs">
+            <h3 className="font-bold text-[#225332] flex items-center gap-1.5">
+              <IconShield className="h-3.5 w-3.5 text-[#225332]" />
               <span>Transparansi Penanganan</span>
             </h3>
-            <p className="text-[11px] text-[#57524d] leading-relaxed">
+            <p className="text-[11px] text-[#5c685f] leading-relaxed">
               Setiap laporan yang masuk diteruskan ke instansi penanggung jawab dan dapat dipantau bersama linimasa statusnya oleh publik.
             </p>
           </div>
 
           {/* Widget 3: Quick Links / Footer */}
-          <div className="px-2 text-[11px] text-[#8c857e] space-y-1">
+          <div className="px-2 text-[11px] text-[#8c978f] space-y-1">
             <div className="flex flex-wrap gap-x-2 gap-y-1">
               <Link href="/reports" className="hover:underline">Feed</Link>
               <span>&bull;</span>
@@ -864,43 +754,7 @@ function ReportsFeedContent() {
           </div>
         </aside>
       </div>
-
-      {/* Mobile Bottom Navigation */}
-      <nav
-        aria-label="Navigasi Bawah Mobile"
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-30 border-t border-[#eae2d3] bg-[#fafaf5]/95 backdrop-blur-md px-4 py-2 flex items-center justify-around text-[10px] font-semibold text-[#57524d]"
-      >
-        <Link href="/reports" className="flex flex-col items-center gap-0.5 text-[#1e4d2b]">
-          <IconDocument className="h-4 w-4" />
-          <span>Feed</span>
-        </Link>
-        <Link href="/reports/create" className="flex flex-col items-center gap-0.5 hover:text-[#1e4d2b]">
-          <IconCamera className="h-4 w-4" />
-          <span>Lapor</span>
-        </Link>
-        {user ? (
-          <>
-            <Link href="/bookmarks" className="flex flex-col items-center gap-0.5 hover:text-[#1e4d2b]">
-              <IconBookmark className="h-4 w-4" />
-              <span>Simpan</span>
-            </Link>
-            <Link href="/notifications" className="flex flex-col items-center gap-0.5 hover:text-[#1e4d2b]">
-              <IconBell className="h-4 w-4" />
-              <span>Notifikasi</span>
-            </Link>
-            <Link href={`/users/${user.id}`} className="flex flex-col items-center gap-0.5 hover:text-[#1e4d2b]">
-              <IconUser className="h-4 w-4" />
-              <span>Profil</span>
-            </Link>
-          </>
-        ) : (
-          <Link href="/login" className="flex flex-col items-center gap-0.5 hover:text-[#1e4d2b]">
-            <IconUser className="h-4 w-4" />
-            <span>Masuk</span>
-          </Link>
-        )}
-      </nav>
-    </div>
+    </AuthenticatedShell>
   );
 }
 
@@ -908,7 +762,7 @@ export default function ReportsFeedPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#fafaf5] text-[#2c2926]">
+        <div className="min-h-screen bg-[#fafaf7] text-[#1c241e]">
           <div className="mx-auto max-w-[1360px] px-4 sm:px-6 py-5 flex gap-6 items-start">
             <div className="hidden lg:block w-[240px] space-y-4">
               <TrendingWidgetSkeleton />

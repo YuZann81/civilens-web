@@ -9,6 +9,7 @@ import { GovernmentOverviewMetrics, Report, ReportFlag } from "@/lib/api/types";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
+  usePathname: () => "/government",
   useParams: () => ({ id: "101" }),
   useSearchParams: () => ({ get: () => null }),
 }));
