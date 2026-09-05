@@ -63,6 +63,49 @@ body {
   min-height: 100vh;
 }
 
+/* Civic & Environmental Brand Motion */
+@keyframes pulseRadar {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.08); opacity: 0.3; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+@keyframes floatGentle {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-6px) rotate(1.5deg); }
+}
+
+@keyframes nodeFlow {
+  0% { stroke-dashoffset: 40; }
+  100% { stroke-dashoffset: 0; }
+}
+
+.animate-pulse-radar {
+  animation: pulseRadar 4s ease-in-out infinite;
+}
+
+.animate-float-gentle {
+  animation: floatGentle 6s ease-in-out infinite;
+}
+
+.animate-node-flow {
+  stroke-dasharray: 8 4;
+  animation: nodeFlow 20s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse-radar,
+  .animate-float-gentle,
+  .animate-node-flow,
+  .animate-blob-1,
+  .animate-blob-2,
+  .animate-blob-3,
+  .animate-blob-4 {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
 /* Organic Blobs & Animations for Auth */
 @keyframes blob1 {
   0%, 100% { transform: translate(0, 0) scale(1); }
