@@ -28,67 +28,7 @@ import {
 import { GovernmentDashboardSkeleton } from "@/components/ui/skeletons";
 import { AuthenticatedShell } from "@/components/layout/authenticated-shell";
 
-function getSeverityBadge(severity?: string | null) {
-  switch (severity) {
-    case "critical":
-      return { label: "Kritis", bg: "bg-[#fee2e2] text-[#b91c1c] border-[#fecaca]" };
-    case "high":
-      return { label: "Tinggi", bg: "bg-[#ffedd5] text-[#c2410c] border-[#fed7aa]" };
-    case "medium":
-      return { label: "Sedang", bg: "bg-[#fef3c7] text-[#b45309] border-[#fde68a]" };
-    case "low":
-    default:
-      return { label: "Rendah", bg: "bg-[#edf7ed] text-[#15803d] border-[#bbf7d0]" };
-  }
-}
-
-function getStatusBadge(status: string) {
-  switch (status) {
-    case "resolved":
-    case "selesai":
-      return { label: "Selesai", bg: "bg-[#edf7ed] text-[#15803d] border-[#bbf7d0]" };
-    case "in_progress":
-    case "ditindaklanjuti":
-      return { label: "Ditindaklanjuti", bg: "bg-[#f5f3ff] text-[#6d28d9] border-[#ddd6fe]" };
-    case "verified":
-    case "terverifikasi":
-      return { label: "Terverifikasi", bg: "bg-[#f0fdfa] text-[#0f766e] border-[#99f6e4]" };
-    case "under_review":
-    case "diproses":
-      return { label: "Peninjauan", bg: "bg-[#eff6ff] text-[#1d4ed8] border-[#bfdbfe]" };
-    case "rejected":
-    case "ditolak":
-      return { label: "Ditolak", bg: "bg-[#fee2e2] text-[#b91c1c] border-[#fecaca]" };
-    case "pending":
-    default:
-      return { label: "Menunggu", bg: "bg-[#fef3c7] text-[#b45309] border-[#fde68a]" };
-  }
-}
-
-function formatRelativeAge(dateString: string): string {
-  try {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffSec = Math.floor(diffMs / 1000);
-    const diffMin = Math.floor(diffSec / 60);
-    const diffHour = Math.floor(diffMin / 60);
-    const diffDay = Math.floor(diffHour / 24);
-
-    if (diffSec < 60) return "Baru saja";
-    if (diffMin < 60) return `${diffMin}m lalu`;
-    if (diffHour < 24) return `${diffHour}j lalu`;
-    if (diffDay === 1) return "Kemarin";
-    if (diffDay < 7) return `${diffDay}h lalu`;
-
-    return date.toLocaleDateString("id-ID", {
-      day: "numeric",
-      month: "short",
-    });
-  } catch {
-    return dateString;
-  }
-}
+import { getStatusBadge, getSeverityBadge, formatRelativeTime } from "@/components/reports/report-status-badge";
 
 export default function GovernmentDashboardPage() {
   const router = useRouter();
@@ -416,7 +356,7 @@ export default function GovernmentDashboardPage() {
                   {reports.map((report) => {
                     const statusBadge = getStatusBadge(report.status);
                     const severityBadge = getSeverityBadge(report.ai_analysis?.severity);
-                    const ageText = formatRelativeAge(report.created_at);
+                    const ageText = formatRelativeTime(report.created_at);
 
                     return (
                       <div
@@ -516,7 +456,7 @@ export default function GovernmentDashboardPage() {
                           </span>
                         </div>
                         <span className="text-[11px] text-[#8c978f] font-mono">
-                          ID #{flag.id} &bull; {formatRelativeAge(flag.created_at)}
+                          ID #{flag.id} &bull; {formatRelativeTime(flag.created_at)}
                         </span>
                       </div>
 

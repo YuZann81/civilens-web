@@ -28,42 +28,7 @@ import {
 import { FeedReportSkeleton, TrendingWidgetSkeleton } from "@/components/ui/skeletons";
 import { AuthenticatedShell } from "@/components/layout/authenticated-shell";
 
-function getStatusBadge(status: string) {
-  switch (status) {
-    case "resolved":
-    case "selesai":
-      return { label: "Selesai", bg: "bg-[#edf7ed] text-[#15803d] border-[#bbf7d0]" };
-    case "in_progress":
-    case "ditindaklanjuti":
-      return { label: "Ditindaklanjuti", bg: "bg-[#f5f3ff] text-[#6d28d9] border-[#ddd6fe]" };
-    case "verified":
-    case "terverifikasi":
-      return { label: "Terverifikasi", bg: "bg-[#f0fdfa] text-[#0f766e] border-[#99f6e4]" };
-    case "under_review":
-    case "diproses":
-      return { label: "Peninjauan", bg: "bg-[#eff6ff] text-[#1d4ed8] border-[#bfdbfe]" };
-    case "rejected":
-    case "ditolak":
-      return { label: "Ditolak", bg: "bg-[#fee2e2] text-[#b91c1c] border-[#fecaca]" };
-    case "pending":
-    default:
-      return { label: "Menunggu", bg: "bg-[#fef3c7] text-[#b45309] border-[#fde68a]" };
-  }
-}
-
-function getSeverityBadge(severity?: string | null) {
-  switch (severity) {
-    case "critical":
-      return { label: "Kritis", bg: "bg-[#fee2e2] text-[#b91c1c] border-[#fecaca]" };
-    case "high":
-      return { label: "Tinggi", bg: "bg-[#ffedd5] text-[#c2410c] border-[#fed7aa]" };
-    case "medium":
-      return { label: "Sedang", bg: "bg-[#fef3c7] text-[#b45309] border-[#fde68a]" };
-    case "low":
-    default:
-      return { label: "Rendah", bg: "bg-[#edf7ed] text-[#15803d] border-[#bbf7d0]" };
-  }
-}
+import { getStatusBadge, getSeverityBadge } from "@/components/reports/report-status-badge";
 
 function ReportMediaGallery({ media }: { media?: Report["media"] }) {
   if (!media || media.length === 0) return null;

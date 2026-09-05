@@ -28,73 +28,7 @@ import {
   IconChevronUp,
 } from "@/components/ui/icons";
 
-function getStatusBadge(status: string) {
-  switch (status) {
-    case "closed":
-    case "ditutup":
-      return {
-        label: "Ditutup Resmi",
-        bg: "bg-gray-100 border-gray-300 text-gray-800",
-        dot: "bg-gray-500",
-      };
-    case "resolved":
-    case "selesai":
-      return {
-        label: "Selesai Ditindaklanjuti",
-        bg: "bg-[#edf7ed] border-[#bbf7d0] text-[#15803d]",
-        dot: "bg-[#15803d]",
-      };
-    case "in_progress":
-    case "ditindaklanjuti":
-      return {
-        label: "Sedang Ditindaklanjuti",
-        bg: "bg-[#f5f3ff] border-[#ddd6fe] text-[#6d28d9]",
-        dot: "bg-[#6d28d9]",
-      };
-    case "verified":
-    case "terverifikasi":
-      return {
-        label: "Terverifikasi",
-        bg: "bg-[#f0fdfa] border-[#99f6e4] text-[#0f766e]",
-        dot: "bg-[#0f766e]",
-      };
-    case "under_review":
-    case "diproses":
-      return {
-        label: "Dalam Peninjauan",
-        bg: "bg-[#eff6ff] border-[#bfdbfe] text-[#1d4ed8]",
-        dot: "bg-[#1d4ed8]",
-      };
-    case "rejected":
-    case "ditolak":
-      return {
-        label: "Ditolak / Tidak Valid",
-        bg: "bg-[#fee2e2] border-[#fecaca] text-[#b91c1c]",
-        dot: "bg-[#b91c1c]",
-      };
-    case "pending":
-    default:
-      return {
-        label: "Menunggu Peninjauan",
-        bg: "bg-[#fef3c7] border-[#fde68a] text-[#b45309]",
-        dot: "bg-[#b45309]",
-      };
-  }
-}
-
-function getSeverityBadge(severity?: string | null) {
-  switch (severity) {
-    case "critical":
-      return { label: "Kritis", bg: "bg-[#fee2e2] text-[#b91c1c] border-[#fecaca]" };
-    case "high":
-      return { label: "Tinggi", bg: "bg-[#ffedd5] text-[#c2410c] border-[#fed7aa]" };
-    case "medium":
-      return { label: "Sedang", bg: "bg-[#fef3c7] text-[#b45309] border-[#fde68a]" };
-    case "low":
-    default:
-      return { label: "Rendah", bg: "bg-[#edf7ed] text-[#15803d] border-[#bbf7d0]" };
-  }
-}
+import { getStatusBadge, getSeverityBadge } from "@/components/reports/report-status-badge";
 
 function ReportDetailMediaGallery({ media }: { media?: Report["media"] }) {
   if (!media || media.length === 0) return null;

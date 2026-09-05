@@ -6,6 +6,7 @@ import { getBookmarks } from "@/lib/api/client";
 import { Report } from "@/lib/api/types";
 import { IconBookmark, IconPin } from "@/components/ui/icons";
 import { FeedReportSkeleton } from "@/components/ui/skeletons";
+import { getStatusBadge } from "@/components/reports/report-status-badge";
 import { AuthenticatedShell } from "@/components/layout/authenticated-shell";
 
 export default function BookmarksPage() {
@@ -70,29 +71,40 @@ export default function BookmarksPage() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {reports.map((rep) => (
-              <Link
-                key={rep.id}
-                href={`/reports/${rep.id}`}
-                className="group flex flex-col justify-between rounded-2xl border border-[#e2e6df] bg-white p-5 shadow-xs hover:border-[#225332] hover:shadow-md transition space-y-4"
-              >
-                <div className="space-y-2">
-                  <h2 className="text-base font-bold text-[#1c241e] group-hover:text-[#225332] transition line-clamp-2">
-                    {rep.title}
-                  </h2>
-                  <p className="text-xs text-[#5c685f] line-clamp-3 leading-relaxed">
-                    {rep.description}
-                  </p>
-                </div>
-                {rep.location && (
-                  <p className="text-xs text-[#5c685f] flex items-center gap-1 truncate pt-2 border-t border-[#edf0ea]">
-                    <IconPin className="h-3.5 w-3.5 text-[#225332] shrink-0" />
-                    <span>{rep.location.address}</span>
-                  </p>
-                )}
-              </Link>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {reports.map((rep) => {
+              const statusBadge = getStatusBadge(rep.status);
+
+              return (
+                <Link
+                  key={rep.id}
+                  href={`/reports/${rep.id}`}
+                  className="group flex flex-col justify-between rounded-2xl border border-[#e2e6df] bg-white p-5 shadow-xs hover:border-[#225332] hover:shadow-sm transition space-y-4"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${statusBadge.bg}`}>
+                        {statusBadge.label}
+                      </span>
+                      <span className="text-[10px] text-[#8c978f] font-mono">#{rep.id}</span>
+                    </div>
+
+                    <h2 className="text-base font-bold text-[#1c241e] group-hover:text-[#225332] transition line-clamp-2">
+                      {rep.title}
+                    </h2>
+                    <p className="text-xs text-[#5c685f] line-clamp-3 leading-relaxed">
+                      {rep.description}
+                    </p>
+                  </div>
+                  {rep.location && (
+                    <p className="text-xs text-[#5c685f] flex items-center gap-1 truncate pt-2 border-t border-[#edf0ea]">
+                      <IconPin className="h-3.5 w-3.5 text-[#225332] shrink-0" />
+                      <span className="truncate">{rep.location.address}</span>
+                    </p>
+                  )}
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>
